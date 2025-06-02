@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tabla de Aranceles</title>
+</head>
+<body>
+    <h1>Tabla de Aranceles</h1>
+    {% for seccion in secciones %}
+        <div>
+            <!-- Muestra el prefijo "Sección {id}" en una línea separada -->
+            <h2>Sección {{ seccion.id }}</h2>
+            <!-- Muestra el nombre de la sección en mayúsculas -->
+            <h3 style="margin-top: 0;">{{ seccion.nombre|upper }}</h3>
+            <p>{{ seccion.descripcion|linebreaks }}</p>
+            {% for capitulo in seccion.capitulos.all %}
+                <!-- Muestra el prefijo "Capítulo {codigo}" en una línea separada -->
+                <h3>Capítulo {{ capitulo.codigo }}</h3>
+                <!-- Muestra el nombre del capítulo en mayúsculas -->
+                <h4 style="margin-top: 0;">{{ capitulo.nombre|upper }}</h4>
+                <!-- Aplica el filtro linebreaks a la descripción del capítulo -->
+                <p>{{ capitulo.descripcion|linebreaks }}</p>
+                {% for partida in capitulo.partidas.all %}
+                    <p><strong>{{ partida.codigo }}</strong>: {{ partida.descripcion }}</p>
+                    <ul>
+                        {% for subpartida in partida.subpartidas.all %}
+                            <li><strong>{{ subpartida.codigo }}</strong>: {{ subpartida.descripcion }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    {% endfor %}
+</body>
+</html>
