@@ -50,8 +50,17 @@ class Subpartida(models.Model):
     ice_iehd = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)  # ICE/IEHD
     unidad_medida = models.CharField(max_length=50, blank=True, null=True)
     despacho_en_frontera = models.CharField(max_length=255, blank=True, null=True)
-    documento_adicional = models.TextField(blank=True, null=True)  # Tipo de Doc, Entidad que emite, Disp. Legal
-    preferencias_arancelarias = models.TextField(blank=True, null=True)  # CAN, ACE 36, ACE 47 VEN, ACE 66 MEXICO
+    
+    # Campos para "Documento Adicional para el despacho aduanero"
+    tipo_de_doc = models.CharField(max_length=255, blank=True, null=True)  # Tipo de Doc
+    entidad_que_emite = models.CharField(max_length=255, blank=True, null=True)  # Entidad que emite
+    disposicion_legal = models.CharField(max_length=255, blank=True, null=True)  # Disp. Legal
+
+    # Campos para "Preferencia Arancelaria"
+    can_ace_36_47_ven = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)  # CAN ACE 36 ACE 47 VEN
+    ace_22_chile = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)  # ACE 22 Chile
+    ace_22_prot = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)  # ACE 22 Prot
+    ace_66_mexico = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)  # ACE 66 México
 
     def __str__(self):
         return self.codigo
