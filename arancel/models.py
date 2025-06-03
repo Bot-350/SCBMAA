@@ -44,10 +44,10 @@ class Partida(models.Model):
 
 class Subpartida(models.Model):
     partida = models.ForeignKey(Partida, on_delete=models.CASCADE, related_name='subpartidas')
-    codigo = models.CharField(max_length=10, unique=True)
+    codigo = models.CharField(max_length=13, unique=True)
     descripcion = models.TextField()
-    ga = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)  # GA %
-    ice_iehd = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)  # ICE/IEHD
+    ga = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # GA %
+    ice_iehd = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # ICE/IEHD
     unidad_medida = models.CharField(max_length=50, blank=True, null=True)
     despacho_en_frontera = models.CharField(max_length=255, blank=True, null=True)
     
