@@ -2,31 +2,120 @@
 <html>
 <head>
     <title>Tabla de Aranceles</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .seccion {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+        .header-row {
+            background-color: #e0e0e0;
+        }
+        .subheader-row {
+            background-color: #f0f0f0;
+        }
+        .no-border {
+            border: none;
+            background-color: transparent;
+        }
+    </style>
 </head>
 <body>
     <h1>Tabla de Aranceles</h1>
     {% for seccion in secciones %}
-        <div>
-            <!-- Muestra el prefijo "Sección {id}" en una línea separada -->
+        <div class="seccion">
             <h2>Sección {{ seccion.id }}</h2>
-            <!-- Muestra el nombre de la sección en mayúsculas -->
-            <h3 style="margin-top: 0;">{{ seccion.nombre|upper }}</h3>
+            <h3>{{ seccion.nombre|upper }}</h3>
             <p>{{ seccion.descripcion|linebreaks }}</p>
+            
             {% for capitulo in seccion.capitulos.all %}
-                <!-- Muestra el prefijo "Capítulo {codigo}" en una línea separada -->
-                <h3>Capítulo {{ capitulo.codigo }}</h3>
-                <!-- Muestra el nombre del capítulo en mayúsculas -->
-                <h4 style="margin-top: 0;">{{ capitulo.nombre|upper }}</h4>
-                <!-- Aplica el filtro linebreaks a la descripción del capítulo -->
-                <p>{{ capitulo.descripcion|linebreaks }}</p>
-                {% for partida in capitulo.partidas.all %}
-                    <p><strong>{{ partida.codigo }}</strong>: {{ partida.descripcion }}</p>
-                    <ul>
-                        {% for subpartida in partida.subpartidas.all %}
-                            <li><strong>{{ subpartida.codigo }}</strong>: {{ subpartida.descripcion }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endfor %}
+                <div style="margin-top: 20px;">
+                    <h3>Capítulo {{ capitulo.codigo }}</h3>
+                    <h4>{{ capitulo.nombre|upper }}</h4>
+                    <p>{{ capitulo.descripcion|linebreaks }}</p>
+                    
+                    <table>
+                        <thead>
+                            <tr class="header-row">
+                                <th rowspan="3">CÓDIGO</th>
+                                <th rowspan="3">DESCRIPCIÓN DE LA MERCANCÍA</th>
+                                <th rowspan="3">GA %</th>
+                                <th rowspan="3">ICE/IEHD</th>
+                                <th rowspan="3">UNIDAD DE MEDIDA</th>
+                                <th rowspan="3">DESPACHO EN FRONTERA</th>
+                                <th colspan="3">DOCUMENTO ADICIONAL PARA EL DESPACHO ADUANERO</th>
+                                <th colspan="4">PREFERENCIA ARANCELARIA</th>
+                            </tr>
+                            <tr class="subheader-row">
+                                <th rowspan="2">TIPO DE DOC</th>
+                                <th rowspan="2">ENTIDAD QUE EMITE</th>
+                                <th rowspan="2">DISP. LEGAL</th>
+                                <th rowspan="2">CAN ACE 36 ACE 47 VEN</th>
+                                <th colspan="2">ACE 22</th>
+                                <th rowspan="2">ACE 66 MÉXICO</th>
+                            </tr>
+                            <tr class="subheader-row">
+                                <th>Chi</th>
+                                <th>Prot</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for partida in capitulo.partidas.all %}
+                                <tr>
+                                    <td>{{ partida.codigo }}</td>
+                                    <td>{{ partida.descripcion }}</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>{{ partida.unidad_medida }}</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>{{ partida.preferencias_arancelarias }}</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                </tr>
+                                {% for subpartida in partida.subpartidas.all %}
+                                    <tr>
+                                        <td>{{ subpartida.codigo }}</td>
+                                        <td>{{ subpartida.descripcion }}</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>{{ subpartida.unidad_medida }}</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>{{ subpartida.preferencias_arancelarias }}</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                        <td>-</td>
+                                    </tr>
+                                {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% endfor %}
         </div>
     {% endfor %}

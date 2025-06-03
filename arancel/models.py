@@ -37,9 +37,6 @@ class Partida(models.Model):
     capitulo = models.ForeignKey(Capitulo, on_delete=models.CASCADE, related_name='partidas')
     codigo = models.CharField(max_length=10, unique=True)
     descripcion = models.TextField()
-    unidad_medida = models.CharField(max_length=50, blank=True, null=True)
-    documento_adicional = models.TextField(blank=True, null=True)
-    preferencias_arancelarias = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.codigo
@@ -49,9 +46,12 @@ class Subpartida(models.Model):
     partida = models.ForeignKey(Partida, on_delete=models.CASCADE, related_name='subpartidas')
     codigo = models.CharField(max_length=10, unique=True)
     descripcion = models.TextField()
+    ga = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)  # GA %
+    ice_iehd = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)  # ICE/IEHD
     unidad_medida = models.CharField(max_length=50, blank=True, null=True)
-    documento_adicional = models.TextField(blank=True, null=True)
-    preferencias_arancelarias = models.TextField(blank=True, null=True)
+    despacho_en_frontera = models.CharField(max_length=255, blank=True, null=True)
+    documento_adicional = models.TextField(blank=True, null=True)  # Tipo de Doc, Entidad que emite, Disp. Legal
+    preferencias_arancelarias = models.TextField(blank=True, null=True)  # CAN, ACE 36, ACE 47 VEN, ACE 66 MEXICO
 
     def __str__(self):
         return self.codigo

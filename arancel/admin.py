@@ -7,12 +7,12 @@ class SeccionAdmin(admin.ModelAdmin):
 
 @admin.register(Capitulo)
 class CapituloAdmin(admin.ModelAdmin):
-    list_display = ('id', 'codigo', 'nombre', 'seccion')
+    list_display = ('codigo', 'nombre', 'descripcion', 'seccion')
 
 @admin.register(Partida)
 class PartidaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'codigo', 'descripcion', 'capitulo', 'unidad_medida', 'documento_adicional', 'preferencias_arancelarias')
+    list_display = ('codigo', 'descripcion')
 
 @admin.register(Subpartida)
 class SubpartidaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'codigo', 'descripcion', 'partida', 'unidad_medida', 'documento_adicional', 'preferencias_arancelarias')
+    list_display = ('codigo', 'descripcion', 'ga', 'ice_iehd', 'unidad_medida')
