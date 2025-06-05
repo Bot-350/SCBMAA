@@ -1,6 +1,38 @@
 from django.shortcuts import render
-from .models import Seccion
+from django.http import JsonResponse
+from .models import Seccion, Partida, Subpartida
 
 def tabla_aranceles(request):
     secciones = Seccion.objects.prefetch_related('capitulos__partidas__subpartidas')
     return render(request, 'arancel/tabla_aranceles.html', {'secciones': secciones})
+
+def search_predictive(request):
+    query = request.GET.get('q', '').strip()  # Obtén el término de búsqueda
+    if not query:
+        return JsonResponse([], safe=False)
+
+    # Buscar por código exacto en partidas y subpartidas
+    partidas = Partida.objects.filter(codigo__icontains=query)
+    subpartidas = Subpartida.objects.filter(codigo__icontains=query)
+
+    # Buscar por palabras en la descripción
+    partidas_descripcion = Partida.objects.filter(descripcion__icontains=query)
+    subpartidas_descripcion = Subpartida.objects.filter(descripcion__icontains=query)
+
+    # Combinar resultados
+    results = []
+    for partida in partidas.union(partidas_descripcion):
+        results.append({
+            'type': 'partida',
+            'codigo': partida.codigo,
+            'descripcion': partida.descripcion,
+        })
+
+    for subpartida in subpartidas.union(subpartidas_descripcion):
+        results.append({
+            'type': 'subpartida',
+            'codigo': subpartida.codigo,
+            'descripcion': subpartida.descripcion,
+        })
+
+    return JsonResponse(results, safe=False)

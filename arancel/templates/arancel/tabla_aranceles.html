@@ -42,11 +42,56 @@
         td:empty::after {
             content: "\00a0"; /* Espacio irrompible para celdas vacías */
         }
+        #search-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #fff;
+            padding: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        #search {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        #suggestions {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            overflow-y: auto;
+            position: absolute;
+            background-color: #fff;
+            width: 100%;
+        }
+
+        #suggestions li {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        #suggestions li:hover {
+            background-color: #f0f0f0;
+        }
+
+        body {
+            margin-top: 60px; /* Ajusta el contenido para que no quede debajo del buscador */
+        }
     </style>
 </head>
 <body>
-    {% load custom_filters %}
+    <div id="search-container">
+        <input type="text" id="search" placeholder="Buscar..." autocomplete="off">
+        <ul id="suggestions"></ul>
+    </div>
     <h1>Tabla de Aranceles</h1>
+    {% load custom_filters %}
     {% for seccion in secciones %}
         <div class="seccion">
             <h2>Sección {{ seccion.id }}</h2>
@@ -129,5 +174,60 @@
             {% endfor %}
         </div>
     {% endfor %}
+
+    <script>
+        document.getElementById('search').addEventListener('input', function() {
+            const query = this.value;
+            const suggestions = document.getElementById('suggestions');
+
+            if (query.length > 2) {  // Solo buscar si hay más de 2 caracteres
+                fetch(`/arancel/search/?q=${query}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        suggestions.innerHTML = '';  // Limpia las sugerencias anteriores
+
+                        // Mostrar resultados agrupados por tipo
+                        const partidas = data.filter(item => item.type === 'partida');
+                        const subpartidas = data.filter(item => item.type === 'subpartida');
+
+                        if (partidas.length > 0) {
+                            const partidaHeader = document.createElement('li');
+                            partidaHeader.textContent = 'Partidas:';
+                            partidaHeader.style.fontWeight = 'bold';
+                            suggestions.appendChild(partidaHeader);
+
+                            partidas.forEach(item => {
+                                const li = document.createElement('li');
+                                li.textContent = `${item.codigo} - ${item.descripcion}`;
+                                li.addEventListener('click', () => {
+                                    document.getElementById('search').value = item.descripcion;  // Autocompleta el campo
+                                    suggestions.innerHTML = '';  // Limpia las sugerencias
+                                });
+                                suggestions.appendChild(li);
+                            });
+                        }
+
+                        if (subpartidas.length > 0) {
+                            const subpartidaHeader = document.createElement('li');
+                            subpartidaHeader.textContent = 'Subpartidas:';
+                            subpartidaHeader.style.fontWeight = 'bold';
+                            suggestions.appendChild(subpartidaHeader);
+
+                            subpartidas.forEach(item => {
+                                const li = document.createElement('li');
+                                li.textContent = `${item.codigo} - ${item.descripcion}`;
+                                li.addEventListener('click', () => {
+                                    document.getElementById('search').value = item.descripcion;  // Autocompleta el campo
+                                    suggestions.innerHTML = '';  // Limpia las sugerencias
+                                });
+                                suggestions.appendChild(li);
+                            });
+                        }
+                    });
+            } else {
+                suggestions.innerHTML = '';  // Limpia las sugerencias si no hay suficiente texto
+            }
+        });
+    </script>
 </body>
 </html>
