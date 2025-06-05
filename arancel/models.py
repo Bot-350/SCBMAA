@@ -34,6 +34,7 @@ class Capitulo(models.Model):
 
 
 class Partida(models.Model):
+    id = models.AutoField(primary_key=True)
     capitulo = models.ForeignKey(Capitulo, on_delete=models.CASCADE, related_name='partidas')
     codigo = models.CharField(max_length=10, unique=True)
     descripcion = models.TextField()
@@ -43,6 +44,7 @@ class Partida(models.Model):
 
 
 class Subpartida(models.Model):
+    id = models.AutoField(primary_key=True)
     partida = models.ForeignKey(Partida, on_delete=models.CASCADE, related_name='subpartidas')
     codigo = models.CharField(max_length=13, unique=True)
     descripcion = models.TextField()

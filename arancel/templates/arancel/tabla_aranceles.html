@@ -33,47 +33,57 @@
         .subheader-row {
             background-color: #f0f0f0;
         }
-        .no-border {
-            border: none;
-            background-color: transparent;
+        .text-left {
+            text-align: left;
+        }
+        .small-text {
+            font-size: 12px;
+        }
+        td:empty::after {
+            content: "\00a0"; /* Espacio irrompible para celdas vacías */
         }
     </style>
 </head>
 <body>
+    {% load custom_filters %}
     <h1>Tabla de Aranceles</h1>
     {% for seccion in secciones %}
         <div class="seccion">
             <h2>Sección {{ seccion.id }}</h2>
             <h3>{{ seccion.nombre|upper }}</h3>
-            <p>{{ seccion.descripcion|linebreaks }}</p>
+            {% if seccion.descripcion %}
+                <p>{{ seccion.descripcion|linebreaks }}</p>
+            {% endif %}
             
             {% for capitulo in seccion.capitulos.all %}
                 <div style="margin-top: 20px;">
                     <h3>Capítulo {{ capitulo.codigo }}</h3>
                     <h4>{{ capitulo.nombre|upper }}</h4>
-                    <p>{{ capitulo.descripcion|linebreaks }}</p>
+                    {% if capitulo.descripcion %}
+                        <p>{{ capitulo.descripcion|linebreaks }}</p>
+                    {% endif %}
                     
                     <table>
                         <thead>
                             <tr class="header-row">
                                 <th rowspan="3">CÓDIGO</th>
-                                <th rowspan="3">DESCRIPCIÓN DE LA MERCANCÍA</th>
+                                <th rowspan="3">DESCRIPCIÓN</th>
                                 <th rowspan="3">GA %</th>
                                 <th rowspan="3">ICE/IEHD</th>
                                 <th rowspan="3">UNIDAD DE MEDIDA</th>
                                 <th rowspan="3">DESPACHO EN FRONTERA</th>
-                                <th colspan="3">DOCUMENTO ADICIONAL PARA EL DESPACHO ADUANERO</th>
+                                <th colspan="3">DOCUMENTO ADICIONAL</th>
                                 <th colspan="4">PREFERENCIA ARANCELARIA</th>
                             </tr>
-                            <tr class="subheader-row">
-                                <th rowspan="2">TIPO DE DOC</th>
+                            <tr class="subheader-row small-text">
+                                <th rowspan="2">TIPO DOC</th>
                                 <th rowspan="2">ENTIDAD QUE EMITE</th>
                                 <th rowspan="2">DISP. LEGAL</th>
                                 <th rowspan="2">CAN ACE 36 ACE 47 VEN</th>
                                 <th colspan="2">ACE 22</th>
-                                <th rowspan="2">ACE 66 MÉXICO</th>
+                                <th rowspan="2">ACE 66 MEXICO</th>
                             </tr>
-                            <tr class="subheader-row">
+                            <tr class="subheader-row small-text">
                                 <th>Chi</th>
                                 <th>Prot</th>
                             </tr>
@@ -81,35 +91,35 @@
                         <tbody>
                             {% for partida in capitulo.partidas.all %}
                                 <tr>
-                                    <td>{{ partida.codigo }}</td>
-                                    <td>{{ partida.descripcion }}</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>{{ partida.unidad_medida }}</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>{{ partida.preferencias_arancelarias }}</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>-</td>
+                                    <td class="text-left">{{ partida.codigo }}</td>
+                                    <td class="text-left">{{ partida.descripcion }}</td>
+                                    <td>{{ partida.ga|blank_if_none }}</td>
+                                    <td>{{ partida.ice_iehd|blank_if_none }}</td>
+                                    <td>{{ partida.unidad_medida|blank_if_none }}</td>
+                                    <td>{{ partida.despacho_en_frontera|blank_if_none }}</td>
+                                    <td>{{ partida.tipo_de_doc|blank_if_none }}</td>
+                                    <td>{{ partida.entidad_que_emite|blank_if_none }}</td>
+                                    <td>{{ partida.disposicion_legal|blank_if_none }}</td>
+                                    <td>{{ partida.can_ace_36_47_ven|blank_if_none }}</td>
+                                    <td>{{ partida.ace_22_chile|blank_if_none }}</td>
+                                    <td>{{ partida.ace_22_prot|blank_if_none }}</td>
+                                    <td>{{ partida.ace_66_mexico|blank_if_none }}</td>
                                 </tr>
                                 {% for subpartida in partida.subpartidas.all %}
                                     <tr>
-                                        <td>{{ subpartida.codigo }}</td>
-                                        <td>{{ subpartida.descripcion }}</td>
-                                        <td>-</td>
-                                        <td>-</td>
-                                        <td>{{ subpartida.unidad_medida }}</td>
-                                        <td>-</td>
-                                        <td>-</td>
-                                        <td>-</td>
-                                        <td>-</td>
-                                        <td>{{ subpartida.preferencias_arancelarias }}</td>
-                                        <td>-</td>
-                                        <td>-</td>
-                                        <td>-</td>
+                                        <td class="text-left">{{ subpartida.codigo }}</td>
+                                        <td class="text-left">{{ subpartida.descripcion }}</td>
+                                        <td>{{ subpartida.ga|blank_if_none }}</td>
+                                        <td>{{ subpartida.ice_iehd|blank_if_none }}</td>
+                                        <td>{{ subpartida.unidad_medida|blank_if_none }}</td>
+                                        <td>{{ subpartida.despacho_en_frontera|blank_if_none }}</td>
+                                        <td>{{ subpartida.tipo_de_doc|blank_if_none }}</td>
+                                        <td>{{ subpartida.entidad_que_emite|blank_if_none }}</td>
+                                        <td>{{ subpartida.disposicion_legal|blank_if_none }}</td>
+                                        <td>{{ subpartida.can_ace_36_47_ven|blank_if_none }}</td>
+                                        <td>{{ subpartida.ace_22_chile|blank_if_none }}</td>
+                                        <td>{{ subpartida.ace_22_prot|blank_if_none }}</td>
+                                        <td>{{ subpartida.ace_66_mexico|blank_if_none }}</td>
                                     </tr>
                                 {% endfor %}
                             {% endfor %}
