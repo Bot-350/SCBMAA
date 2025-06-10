@@ -83,6 +83,12 @@
         body {
             margin-top: 60px; /* Ajusta el contenido para que no quede debajo del buscador */
         }
+
+        /* Resaltar fila al hacer scroll */
+        .highlight {
+            background-color: yellow;
+            transition: background-color 2s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -135,7 +141,7 @@
                         </thead>
                         <tbody>
                             {% for partida in capitulo.partidas.all %}
-                                <tr>
+                                <tr id="partida-{{ partida.codigo }}">
                                     <td class="text-left">{{ partida.codigo }}</td>
                                     <td class="text-left">{{ partida.descripcion }}</td>
                                     <td>{{ partida.ga|blank_if_none }}</td>
@@ -151,7 +157,7 @@
                                     <td>{{ partida.ace_66_mexico|blank_if_none }}</td>
                                 </tr>
                                 {% for subpartida in partida.subpartidas.all %}
-                                    <tr>
+                                    <tr id="subpartida-{{ subpartida.codigo }}">
                                         <td class="text-left">{{ subpartida.codigo }}</td>
                                         <td class="text-left">{{ subpartida.descripcion }}</td>
                                         <td>{{ subpartida.ga|blank_if_none }}</td>
@@ -199,9 +205,19 @@
                             partidas.forEach(item => {
                                 const li = document.createElement('li');
                                 li.textContent = `${item.codigo} - ${item.descripcion}`;
+                                li.dataset.targetId = `partida-${item.codigo}`; // Agrega el ID del elemento objetivo
                                 li.addEventListener('click', () => {
-                                    document.getElementById('search').value = item.descripcion;  // Autocompleta el campo
-                                    suggestions.innerHTML = '';  // Limpia las sugerencias
+                                    const target = document.getElementById(li.dataset.targetId);
+                                    if (target) {
+                                        target.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Desplaza hacia la fila
+                                        // Resalta temporalmente
+                                        target.classList.add('highlight');
+                                        setTimeout(() => {
+                                            target.classList.remove('highlight');
+                                        }, 2000);
+                                    }
+                                    suggestions.innerHTML = '';
+                                    document.getElementById('search').value = item.codigo;
                                 });
                                 suggestions.appendChild(li);
                             });
@@ -216,9 +232,19 @@
                             subpartidas.forEach(item => {
                                 const li = document.createElement('li');
                                 li.textContent = `${item.codigo} - ${item.descripcion}`;
+                                li.dataset.targetId = `subpartida-${item.codigo}`; // Agrega el ID del elemento objetivo
                                 li.addEventListener('click', () => {
-                                    document.getElementById('search').value = item.descripcion;  // Autocompleta el campo
-                                    suggestions.innerHTML = '';  // Limpia las sugerencias
+                                    const target = document.getElementById(li.dataset.targetId);
+                                    if (target) {
+                                        target.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Desplaza hacia la fila
+                                        // Resalta temporalmente
+                                        target.classList.add('highlight');
+                                        setTimeout(() => {
+                                            target.classList.remove('highlight');
+                                        }, 2000);
+                                    }
+                                    suggestions.innerHTML = '';
+                                    document.getElementById('search').value = item.codigo;
                                 });
                                 suggestions.appendChild(li);
                             });
@@ -226,6 +252,26 @@
                     });
             } else {
                 suggestions.innerHTML = '';  // Limpia las sugerencias si no hay suficiente texto
+            }
+        });
+
+        document.getElementById('search').addEventListener('keydown', function(event) {
+            const suggestions = document.getElementById('suggestions');
+            if (event.key === 'Enter' && suggestions.firstChild) {
+                const firstSuggestion = suggestions.querySelector('li[data-target-id]');
+                if (firstSuggestion) {
+                    const target = document.getElementById(firstSuggestion.dataset.targetId);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        target.classList.add('highlight');
+                        setTimeout(() => {
+                            target.classList.remove('highlight');
+                        }, 2000);
+                    }
+                    suggestions.innerHTML = '';
+                    this.value = firstSuggestion.textContent.split(' - ')[0];
+                }
+                event.preventDefault();
             }
         });
     </script>
