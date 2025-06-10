@@ -186,7 +186,7 @@
             const query = this.value;
             const suggestions = document.getElementById('suggestions');
 
-            if (query.length > 2) {  // Solo buscar si hay más de 2 caracteres
+            if (query.length > 5) {  // Solo buscar si hay más de 2 caracteres
                 fetch(`/arancel/search/?q=${query}`)
                     .then(response => response.json())
                     .then(data => {
@@ -205,7 +205,7 @@
                             partidas.forEach(item => {
                                 const li = document.createElement('li');
                                 li.textContent = `${item.codigo} - ${item.descripcion}`;
-                                li.dataset.targetId = `partida-${item.codigo}`; // Agrega el ID del elemento objetivo
+                                li.dataset.targetId = 'partida-${item.codigo}'; // Agrega el ID del elemento objetivo
                                 li.addEventListener('click', () => {
                                     const target = document.getElementById(li.dataset.targetId);
                                     if (target) {
