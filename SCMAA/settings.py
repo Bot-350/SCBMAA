@@ -26,9 +26,7 @@ SECRET_KEY = 'django-insecure-c@i7n+gr)68k&@374a^-(*q_15imo35e7-(i*=+gp^yn+gojjv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'https://scmaa.onrender.com',
-]
+ALLOWED_HOSTS = ['scmaa.onrender.com']
 
 
 # Application definition
