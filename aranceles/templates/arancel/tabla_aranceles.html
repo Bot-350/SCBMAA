@@ -359,21 +359,21 @@
                 mainContent.classList.remove('sidebar-closed');
                 mainContent.classList.add('sidebar-open');
                 toggleBtn.innerHTML = '☰';
-                // Enfocar el campo de búsqueda cuando se abre
+                // Enfocar el campo de busqueda cuando se abre
                 setTimeout(() => {
                     document.getElementById('search').focus();
                 }, 300);
             }
         });
         
-        // Función para validar los criterios de búsqueda
+        // Funcion para validar los criterios de busqueda
         function validateSearchQuery(query) {
-            // Si el query contiene solo números, debe tener al menos 6 dígitos
+            // Si el query contiene solo numeros, debe tener al menos 6 digitos
             if (/^\d+$/.test(query)) {
                 return query.length >= 6;
             }
             
-            // Si contiene texto, debe tener al menos 2 palabras
+            // Si contiene texto, debe tener al menos 2 letras
             const words = query.trim().split(/\s+/);
             return words.length >= 2 && words.every(word => word.length > 0);
         }
@@ -451,7 +451,7 @@
                     if (/^\d+$/.test(query)) {
                         helpLi.textContent = 'El código debe tener al menos 6 dígitos';
                     } else {
-                        helpLi.textContent = 'La descripción debe tener al menos 2 palabras';
+                        helpLi.textContent = 'La descripción debe tener al menos 2 letras';
                     }
                     helpLi.style.fontStyle = 'italic';
                     helpLi.style.color = '#6c757d';

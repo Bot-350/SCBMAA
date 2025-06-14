@@ -333,23 +333,17 @@
     </div>
 
     <script>
-        // Funciones de navegación
+        // Funciones de navegacion
         function goToArancel() {
-            window.location.href = "{% url 'aranceles:tabla_aranceles' %}";
+            window.location.href = "{% url 'aranceles:tabla_aranceles' %}"; //url 
         }
 
         function goToReferencias() {
-            // Aquí puedes agregar la URL de la página de referencias
-            console.log('Navegando a Referencias de Clasificación');
-            // window.location.href = 'referencias.html';
-            alert('Navegando a Referencias de Clasificación');
+            //window.location.href = "{% url '' %}";
         }
 
         function goToNotas() {
-            // Aquí puedes agregar la URL de la página de notas
-            console.log('Navegando a Notas Explicativas');
-            // window.location.href = 'notas.html';
-            alert('Navegando a Notas Explicativas');
+            //window.location.href = "{% url '' %}";
         }
 
         // Efectos adicionales al cargar la página
