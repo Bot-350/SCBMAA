@@ -39,18 +39,117 @@
             letter-spacing: 1px;
         }
         
-        #user-icon {
+        /* Contenedor del usuario con menú desplegable */
+        #user-container {
             margin-left: auto;
+            position: relative;
+        }
+        
+        #user-icon {
             color: white;
             font-size: 24px;
             cursor: pointer;
             padding: 8px;
             border-radius: 50%;
             transition: background-color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         #user-icon:hover {
             background-color: rgba(255,255,255,0.1);
+        }
+        
+        /* Menú desplegable */
+        #user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 150px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1002;
+        }
+        
+        #user-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        #user-dropdown::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 12px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid white;
+        }
+        
+        .dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            color: #333;
+            text-decoration: none;
+        }
+        
+        .dropdown-item:last-child {
+            border-bottom: none;
+            border-radius: 0 0 5px 5px;
+        }
+        
+        .dropdown-item:first-child {
+            border-radius: 5px 5px 0 0;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .dropdown-item:active {
+            background-color: #e9ecef;
+        }
+        
+        .dropdown-item .icon {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        .logout-item {
+            color: #dc3545;
+        }
+        
+        .logout-item:hover {
+            background-color: #fdf2f2;
+        }
+        
+        /* Overlay para cerrar el menú desplegable */
+        #dropdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+            display: none;
+        }
+        
+        #dropdown-overlay.show {
+            display: block;
         }
         
         /* Container principal */
@@ -292,10 +391,31 @@
     </style>
 </head>
 <body>
+    <!-- Overlay para cerrar el menú -->
+    <div id="dropdown-overlay"></div>
+
     <!-- Barra superior -->
     <div id="top-bar">
         <h1>SisArm</h1>
-        <div id="user-icon">👤</div>
+        <div id="user-container">
+            <div id="user-icon">
+                👤
+            </div>
+            <div id="user-dropdown">
+                <div class="dropdown-item">
+                    <span class="icon">👤</span>
+                    <span>Perfil</span>
+                </div>
+                <div class="dropdown-item">
+                    <span class="icon">⚙️</span>
+                    <span>Configuración</span>
+                </div>
+                <div class="dropdown-item logout-item" id="logout-btn">
+                    <span class="icon">🚪</span>
+                    <span>Cerrar Sesión</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Decoración de fondo -->
@@ -333,7 +453,78 @@
     </div>
 
     <script>
-        // Funciones de navegacion
+        // Funcionalidad del menú desplegable del usuario
+        const userIcon = document.getElementById('user-icon');
+        const userDropdown = document.getElementById('user-dropdown');
+        const dropdownOverlay = document.getElementById('dropdown-overlay');
+        const logoutBtn = document.getElementById('logout-btn');
+        
+        // Mostrar/ocultar menú desplegable
+        userIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleDropdown();
+        });
+        
+        // Cerrar menú al hacer clic en el overlay
+        dropdownOverlay.addEventListener('click', function() {
+            closeDropdown();
+        });
+        
+        // Función para alternar el menú desplegable
+        function toggleDropdown() {
+            if (userDropdown.classList.contains('show')) {
+                closeDropdown();
+            } else {
+                openDropdown();
+            }
+        }
+        
+        // Función para abrir el menú desplegable
+        function openDropdown() {
+            userDropdown.classList.add('show');
+            dropdownOverlay.classList.add('show');
+        }
+        
+        // Función para cerrar el menú desplegable
+        function closeDropdown() {
+            userDropdown.classList.remove('show');
+            dropdownOverlay.classList.remove('show');
+        }
+        
+        // Manejar el logout
+        logoutBtn.addEventListener('click', function() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                // Aquí puedes agregar la lógica de logout específica de Django
+                // Por ejemplo, redirigir a la página de logout de Django
+                window.location.href = '/';
+            }
+            closeDropdown();
+        });
+        
+        // Función para obtener cookies (útil para CSRF token)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Cerrar menú desplegable con Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDropdown();
+            }
+        });
+
+        // Funciones de navegacion (mantenidas del original)
         function goToArancel() {
             window.location.href = "{% url 'aranceles:tabla_aranceles' %}"; //url 
         }
@@ -346,7 +537,7 @@
             console.log("Función no implementada aún");
         }
 
-        // Efectos adicionales al cargar la página
+        // Efectos adicionales al cargar la página (mantenidos del original)
         document.addEventListener('DOMContentLoaded', function() {
             // Agregar efecto de hover mejorado a los botones
             const buttons = document.querySelectorAll('.main-button');
@@ -360,14 +551,9 @@
                     this.style.transform = 'translateY(0) scale(1)';
                 });
             });
-
-            // Efecto de click en el icono de usuario
-            document.getElementById('user-icon').addEventListener('click', function() {
-                alert('Funcionalidad de usuario - Por implementar');
-            });
         });
 
-        // Agregar más partículas dinámicamente
+        // Agregar más partículas dinámicamente (mantenido del original)
         function createParticle() {
             const particle = document.createElement('div');
             particle.className = 'particle';
@@ -388,7 +574,7 @@
             }, 8000);
         }
 
-        // Crear partículas adicionales periódicamente
+        // Crear partículas adicionales periódicamente (mantenido del original)
         setInterval(createParticle, 3000);
     </script>
 </body>
