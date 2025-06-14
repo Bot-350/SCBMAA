@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'aranceles',
     'inicial.apps.InicialConfig',
+    'usuarios',
 ]
 
 MIDDLEWARE = [
@@ -101,6 +102,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGIN_URL = '/login/'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
