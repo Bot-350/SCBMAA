@@ -1,11 +1,14 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from .models import Seccion, Partida, Subpartida
 
+@login_required
 def tabla_aranceles(request):
     secciones = Seccion.objects.prefetch_related('capitulos__partidas__subpartidas')
     return render(request, 'arancel/tabla_aranceles.html', {'secciones': secciones})
 
+@login_required
 def search_predictive(request):
     query = request.GET.get('q', '').strip()  # Obtén el término de búsqueda
     if not query:

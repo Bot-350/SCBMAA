@@ -30,6 +30,13 @@
             margin: 0;
             font-size: 24px;
             font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            text-decoration: none;
+        }
+        
+        #top-bar h1:hover {
+            opacity: 0.8;
         }
         
         /* Contenedor del usuario con menú desplegable */
@@ -39,7 +46,7 @@
         }
         
         #user-icon {
-            color: white;
+            color: white;  
             font-size: 24px;
             cursor: pointer;
             padding: 8px;
@@ -48,6 +55,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            filter: brightness(0) invert(1);  
         }
         
         #user-icon:hover {
@@ -128,6 +136,23 @@
         
         .logout-item:hover {
             background-color: #fdf2f2;
+        }
+        
+        /* Indicador de carga para logout */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .loading::after {
+            content: '...';
+            animation: loading-dots 1.5s infinite;
+        }
+        
+        @keyframes loading-dots {
+            0%, 20% { opacity: 0; }
+            50% { opacity: 1; }
+            80%, 100% { opacity: 0; }
         }
         
         /* Barra lateral */
@@ -336,16 +361,10 @@
 
     <!-- Barra superior -->
     <div id="top-bar">
-        <h1>SisArm</h1>
+        <h1 id="home-link">SisArm</h1>
         <div id="user-container">
-            <div id="user-icon">
-                👤
-            </div>
+            <div id="user-icon" style="color: white;">👤</div>
             <div id="user-dropdown">
-                <div class="dropdown-item">
-                    <span class="icon">👤</span>
-                    <span>Perfil</span>
-                </div>
                 <div class="dropdown-item">
                     <span class="icon">⚙️</span>
                     <span>Configuración</span>
@@ -459,6 +478,11 @@
     </div>
 
     <script>
+        // Funcionalidad para el enlace de inicio
+        document.getElementById('home-link').addEventListener('click', function() {
+            window.location.href = '/';
+        });
+        
         // Funcionalidad del menú desplegable del usuario
         const userIcon = document.getElementById('user-icon');
         const userDropdown = document.getElementById('user-dropdown');
@@ -497,16 +521,6 @@
             dropdownOverlay.classList.remove('show');
         }
         
-        // Manejar el logout
-        logoutBtn.addEventListener('click', function() {
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                // Aquí puedes agregar la lógica de logout
-                // Por ejemplo, redirigir a la página de logout de Django
-                window.location.href = '/';
-            }
-            closeDropdown();
-        });
-        
         // Función para obtener cookies (útil para CSRF token)
         function getCookie(name) {
             let cookieValue = null;
@@ -522,6 +536,96 @@
             }
             return cookieValue;
         }
+        
+        // Función para limpiar datos de sesión del navegador
+        function clearBrowserSession() {
+            // Limpiar datos de sesión específicos de la aplicación
+            try {
+                // Limpiar cookies relacionadas con la sesión
+                const cookies = document.cookie.split(";");
+                for (let cookie of cookies) {
+                    const eqPos = cookie.indexOf("=");
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                    
+                    // Limpiar cookies comunes de sesión
+                    if (name.includes('session') || name.includes('csrf') || name.includes('auth')) {
+                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+                    }
+                }
+                
+                // Limpiar datos específicos del usuario si existen
+                if (window.localStorage) {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.includes('user') || key.includes('session') || key.includes('auth'))) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(key => localStorage.removeItem(key));
+                }
+                
+                if (window.sessionStorage) {
+                    sessionStorage.clear();
+                }
+            } catch (error) {
+                console.warn('No se pudieron limpiar todos los datos de sesión:', error);
+            }
+        }
+        
+        // Función para realizar logout
+        async function performLogout() {
+            try {
+                // Mostrar indicador de carga
+                logoutBtn.classList.add('loading');
+                logoutBtn.querySelector('span:last-child').textContent = 'Cerrando sesión';
+                
+                // Opción 1: Si tienes un endpoint de logout en Django
+                const csrfToken = getCookie('csrftoken');
+                
+                const response = await fetch('/logout/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    // Logout exitoso en el servidor
+                    clearBrowserSession();
+                    
+                    // Redirigir a la página de login
+                    window.location.href = '/';
+                } else {
+                    throw new Error('Error en el servidor');
+                }
+                
+            } catch (error) {
+                console.error('Error durante el logout:', error);
+                
+                // Fallback: limpiar sesión local y redirigir
+                clearBrowserSession();
+                
+                // Mostrar mensaje de advertencia
+                alert('Se ha cerrado la sesión localmente. Por seguridad, cierre completamente el navegador.');
+                
+                // Redirigir a la página principal o login
+                window.location.href = '/';
+            }
+        }
+        
+        // Manejar el logout
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                performLogout();
+            }
+            closeDropdown();
+        });
         
         // Cerrar menú desplegable con Escape
         document.addEventListener('keydown', function(e) {
@@ -548,21 +652,19 @@
                 mainContent.classList.remove('sidebar-closed');
                 mainContent.classList.add('sidebar-open');
                 toggleBtn.innerHTML = '☰';
-                // Enfocar el campo de busqueda cuando se abre
+                // Enfocar el campo de búsqueda cuando se abre
                 setTimeout(() => {
                     document.getElementById('search').focus();
                 }, 300);
             }
         });
         
-        // Funcion para validar los criterios de busqueda
+        // Función para validar los criterios de búsqueda
         function validateSearchQuery(query) {
-            // Si el query contiene solo numeros, debe tener al menos 6 digitos
             if (/^\d+$/.test(query)) {
                 return query.length >= 6;
             }
             
-            // Si contiene texto, debe tener al menos 2 letras
             const words = query.trim().split(/\s+/);
             return words.length >= 2 && words.every(word => word.length > 0);
         }
@@ -572,11 +674,11 @@
             const query = this.value;
             const suggestions = document.getElementById('suggestions');
 
-            if (validateSearchQuery(query)) {  // Usar la nueva validación
+            if (validateSearchQuery(query)) {
                 fetch(`/arancel/search/?q=${query}`)
                     .then(response => response.json())
                     .then(data => {
-                        suggestions.innerHTML = '';  // Limpia las sugerencias anteriores
+                        suggestions.innerHTML = '';
 
                         // Mostrar resultados agrupados por tipo
                         const partidas = data.filter(item => item.type === 'partida');
@@ -592,7 +694,7 @@
                             partidas.forEach(item => {
                                 const li = document.createElement('li');
                                 li.textContent = `${item.codigo} - ${item.descripcion}`;
-                                li.dataset.targetId = 'partida-' + item.codigo; // Agrega el ID del elemento objetivo
+                                li.dataset.targetId = 'partida-' + item.codigo;
                                 li.addEventListener('click', () => scrollToElement(li.dataset.targetId, item.codigo));
                                 suggestions.appendChild(li);
                             });
@@ -608,7 +710,7 @@
                             subpartidas.forEach(item => {
                                 const li = document.createElement('li');
                                 li.textContent = `${item.codigo} - ${item.descripcion}`;
-                                li.dataset.targetId = `subpartida-${item.codigo}`; // Agrega el ID del elemento objetivo
+                                li.dataset.targetId = `subpartida-${item.codigo}`;
                                 li.addEventListener('click', () => scrollToElement(li.dataset.targetId, item.codigo));
                                 suggestions.appendChild(li);
                             });
@@ -632,9 +734,8 @@
                         suggestions.appendChild(errorLi);
                     });
             } else {
-                suggestions.innerHTML = '';  // Limpia las sugerencias si no cumple los criterios
+                suggestions.innerHTML = '';
                 
-                // Mostrar mensaje de ayuda si hay texto pero no cumple los criterios
                 if (query.length > 0) {
                     const helpLi = document.createElement('li');
                     if (/^\d+$/.test(query)) {
@@ -676,6 +777,29 @@
                 event.preventDefault();
             }
         });
+        
+        // Detectar inactividad y hacer logout automático (opcional)
+        let inactivityTimer;
+        const INACTIVITY_TIME = 30 * 60 * 1000; // 30 minutos
+        
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                if (confirm('Tu sesión ha expirado por inactividad. ¿Deseas continuar?')) {
+                    resetInactivityTimer();
+                } else {
+                    performLogout();
+                }
+            }, INACTIVITY_TIME);
+        }
+        
+        // Eventos que resetean el timer de inactividad
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer, true);
+        });
+        
+        // Inicializar timer de inactividad
+        resetInactivityTimer();
     </script>
 </body>
 </html>

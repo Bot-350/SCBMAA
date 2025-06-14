@@ -46,7 +46,7 @@
         }
         
         #user-icon {
-            color: white;
+            color: white;  
             font-size: 24px;
             cursor: pointer;
             padding: 8px;
@@ -55,6 +55,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            filter: brightness(0) invert(1);  
         }
         
         #user-icon:hover {
@@ -135,6 +136,23 @@
         
         .logout-item:hover {
             background-color: #fdf2f2;
+        }
+        
+        /* Indicador de carga para logout */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .loading::after {
+            content: '...';
+            animation: loading-dots 1.5s infinite;
+        }
+        
+        @keyframes loading-dots {
+            0%, 20% { opacity: 0; }
+            50% { opacity: 1; }
+            80%, 100% { opacity: 0; }
         }
         
         /* Overlay para cerrar el menú desplegable */
@@ -398,14 +416,8 @@
     <div id="top-bar">
         <h1>SisArm</h1>
         <div id="user-container">
-            <div id="user-icon">
-                👤
-            </div>
+            <div id="user-icon" style="color: white;">👤</div >
             <div id="user-dropdown">
-                <div class="dropdown-item">
-                    <span class="icon">👤</span>
-                    <span>Perfil</span>
-                </div>
                 <div class="dropdown-item">
                     <span class="icon">⚙️</span>
                     <span>Configuración</span>
@@ -491,16 +503,6 @@
             dropdownOverlay.classList.remove('show');
         }
         
-        // Manejar el logout
-        logoutBtn.addEventListener('click', function() {
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                // Aquí puedes agregar la lógica de logout específica de Django
-                // Por ejemplo, redirigir a la página de logout de Django
-                window.location.href = '/';
-            }
-            closeDropdown();
-        });
-        
         // Función para obtener cookies (útil para CSRF token)
         function getCookie(name) {
             let cookieValue = null;
@@ -517,6 +519,96 @@
             return cookieValue;
         }
         
+        // Función para limpiar datos de sesión del navegador
+        function clearBrowserSession() {
+            // Limpiar datos de sesión específicos de la aplicación
+            try {
+                // Limpiar cookies relacionadas con la sesión
+                const cookies = document.cookie.split(";");
+                for (let cookie of cookies) {
+                    const eqPos = cookie.indexOf("=");
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                    
+                    // Limpiar cookies comunes de sesión
+                    if (name.includes('session') || name.includes('csrf') || name.includes('auth')) {
+                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+                    }
+                }
+                
+                // Limpiar datos específicos del usuario si existen
+                if (window.localStorage) {
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.includes('user') || key.includes('session') || key.includes('auth'))) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(key => localStorage.removeItem(key));
+                }
+                
+                if (window.sessionStorage) {
+                    sessionStorage.clear();
+                }
+            } catch (error) {
+                console.warn('No se pudieron limpiar todos los datos de sesión:', error);
+            }
+        }
+        
+        // Función para realizar logout
+        async function performLogout() {
+            try {
+                // Mostrar indicador de carga
+                logoutBtn.classList.add('loading');
+                logoutBtn.querySelector('span:last-child').textContent = 'Cerrando sesión';
+                
+                // Opción 1: Si tienes un endpoint de logout en Django
+                const csrfToken = getCookie('csrftoken');
+                
+                const response = await fetch('/logout/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    // Logout exitoso en el servidor
+                    clearBrowserSession();
+                    
+                    // Redirigir a la página de login
+                    window.location.href = '/';
+                } else {
+                    throw new Error('Error en el servidor');
+                }
+                
+            } catch (error) {
+                console.error('Error durante el logout:', error);
+                
+                // Fallback: limpiar sesión local y redirigir
+                clearBrowserSession();
+                
+                // Mostrar mensaje de advertencia
+                alert('Se ha cerrado la sesión localmente. Por seguridad, cierre completamente el navegador.');
+                
+                // Redirigir a la página principal o login
+                window.location.href = '/';
+            }
+        }
+        
+        // Manejar el logout
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                performLogout();
+            }
+            closeDropdown();
+        });
+        
         // Cerrar menú desplegable con Escape
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -524,9 +616,9 @@
             }
         });
 
-        // Funciones de navegacion (mantenidas del original)
+        // Funciones de navegacion
         function goToArancel() {
-            window.location.href = "{% url 'aranceles:tabla_aranceles' %}"; //url 
+            window.location.href = "/aranceles/tabla/";
         }
 
         function goToReferencias() {
@@ -537,7 +629,7 @@
             console.log("Función no implementada aún");
         }
 
-        // Efectos adicionales al cargar la página (mantenidos del original)
+        // Efectos adicionales al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
             // Agregar efecto de hover mejorado a los botones
             const buttons = document.querySelectorAll('.main-button');
@@ -553,7 +645,7 @@
             });
         });
 
-        // Agregar más partículas dinámicamente (mantenido del original)
+        // Agregar más partículas dinámicamente
         function createParticle() {
             const particle = document.createElement('div');
             particle.className = 'particle';
@@ -574,8 +666,31 @@
             }, 8000);
         }
 
-        // Crear partículas adicionales periódicamente (mantenido del original)
+        // Crear partículas adicionales periódicamente
         setInterval(createParticle, 3000);
+        
+        // Detectar inactividad y hacer logout automático (opcional)
+        let inactivityTimer;
+        const INACTIVITY_TIME = 30 * 60 * 1000; // 30 minutos
+        
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                if (confirm('Tu sesión ha expirado por inactividad. ¿Deseas continuar?')) {
+                    resetInactivityTimer();
+                } else {
+                    performLogout();
+                }
+            }, INACTIVITY_TIME);
+        }
+        
+        // Eventos que resetean el timer de inactividad
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer, true);
+        });
+        
+        // Inicializar timer de inactividad
+        resetInactivityTimer();
     </script>
 </body>
 </html>
