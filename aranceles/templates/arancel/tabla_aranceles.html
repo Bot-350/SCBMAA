@@ -5,8 +5,172 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
+            transition: margin-left 0.3s ease;
         }
+        
+        /* Barra superior */
+        #top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: #2c3e50;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        #top-bar h1 {
+            color: white;
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        #user-icon {
+            margin-left: auto;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+        
+        #user-icon:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        /* Barra lateral */
+        #sidebar {
+            position: fixed;
+            top: 60px; /* Ajustado para estar debajo de la barra superior */
+            left: 0;
+            height: calc(100vh - 60px); /* Ajustado para compensar la barra superior */
+            background-color: #2c3e50;
+            transition: width 0.3s ease;
+            z-index: 1000;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        #sidebar.closed {
+            width: 60px;
+        }
+        
+        #sidebar.open {
+            width: 350px;
+        }
+        
+        /* Botón toggle */
+        #toggle-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #34495e;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        #toggle-btn:hover {
+            background: #4a6741;
+        }
+        
+        /* Icono cuando está cerrado */
+        #sidebar.closed #toggle-btn {
+            right: 50%;
+            transform: translateX(50%);
+        }
+        
+        /* Contenedor del buscador */
+        #search-container {
+            padding: 60px 20px 20px 20px;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        
+        #sidebar.closed #search-container {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        #search {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+        }
+        
+        #suggestions {
+            list-style: none;
+            margin: 10px 0 0 0;
+            padding: 0;
+            border: 1px solid #ccc;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        #suggestions li {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        
+        #suggestions li:hover {
+            background-color: #f8f9fa;
+        }
+        
+        #suggestions li:last-child {
+            border-bottom: none;
+        }
+        
+        /* Título en la barra lateral */
+        #sidebar-title {
+            color: white;
+            text-align: center;
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        
+        #sidebar.closed #sidebar-title {
+            opacity: 0;
+        }
+        
+        /* Ajuste del contenido principal */
+        #main-content {
+            transition: margin-left 0.3s ease;
+            padding: 20px;
+            margin-top: 60px; /* Espacio para la barra superior */
+        }
+        
+        #main-content.sidebar-open {
+            margin-left: 350px;
+        }
+        
+        #main-content.sidebar-closed {
+            margin-left: 60px;
+        }
+        
+        /* Estilos de la tabla (mantenidos del original) */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -40,153 +204,186 @@
             font-size: 12px;
         }
         td:empty::after {
-            content: "\00a0"; /* Espacio irrompible para celdas vacías */
+            content: "\00a0";
         }
-        #search-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background-color: #fff;
-            padding: 10px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-        }
-
-        #search {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-        }
-
-        #suggestions {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            border: 1px solid #ccc;
-            max-height: 200px;
-            overflow-y: auto;
-            position: absolute;
-            background-color: #fff;
-            width: 100%;
-        }
-
-        #suggestions li {
-            padding: 10px;
-            cursor: pointer;
-        }
-
-        #suggestions li:hover {
-            background-color: #f0f0f0;
-        }
-
-        body {
-            margin-top: 60px; /* Ajusta el contenido para que no quede debajo del buscador */
-        }
-
+        
         /* Resaltar fila al hacer scroll */
         .highlight {
-            background-color: yellow;
+            background-color: #ffeb3b;
             transition: background-color 2s ease-out;
+        }
+        
+        /* Icono de búsqueda cuando está cerrado */
+        #search-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        #sidebar.closed #search-icon {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
-    <div id="search-container">
-        <input type="text" id="search" placeholder="Buscar..." autocomplete="off">
-        <ul id="suggestions"></ul>
-    </div>
-    <h1>Tabla de Aranceles</h1>
-    {% load custom_filters %}
-    {% for seccion in secciones %}
-        <div class="seccion">
-            <h2>Sección {{ seccion.id }}</h2>
-            <h3>{{ seccion.nombre|upper }}</h3>
-            {% if seccion.descripcion %}
-                <p>{{ seccion.descripcion|linebreaks }}</p>
-            {% endif %}
-            
-            {% for capitulo in seccion.capitulos.all %}
-                <div style="margin-top: 20px;">
-                    <h3>Capítulo {{ capitulo.codigo }}</h3>
-                    <h4>{{ capitulo.nombre|upper }}</h4>
-                    {% if capitulo.descripcion %}
-                        <p>{{ capitulo.descripcion|linebreaks }}</p>
-                    {% endif %}
-                    
-                    <table>
-                        <thead>
-                            <tr class="header-row">
-                                <th rowspan="3">CÓDIGO</th>
-                                <th rowspan="3">DESCRIPCIÓN</th>
-                                <th rowspan="3">GA %</th>
-                                <th rowspan="3">ICE/IEHD</th>
-                                <th rowspan="3">UNIDAD DE MEDIDA</th>
-                                <th rowspan="3">DESPACHO EN FRONTERA</th>
-                                <th colspan="3">DOCUMENTO ADICIONAL</th>
-                                <th colspan="4">PREFERENCIA ARANCELARIA</th>
-                            </tr>
-                            <tr class="subheader-row small-text">
-                                <th rowspan="2">TIPO DOC</th>
-                                <th rowspan="2">ENTIDAD QUE EMITE</th>
-                                <th rowspan="2">DISP. LEGAL</th>
-                                <th rowspan="2">CAN ACE 36 ACE 47 VEN</th>
-                                <th colspan="2">ACE 22</th>
-                                <th rowspan="2">ACE 66 MEXICO</th>
-                            </tr>
-                            <tr class="subheader-row small-text">
-                                <th>Chi</th>
-                                <th>Prot</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for partida in capitulo.partidas.all %}
-                                <tr id="partida-{{ partida.codigo }}">
-                                    <td class="text-left">{{ partida.codigo }}</td>
-                                    <td class="text-left">{{ partida.descripcion }}</td>
-                                    <td>{{ partida.ga|blank_if_none }}</td>
-                                    <td>{{ partida.ice_iehd|blank_if_none }}</td>
-                                    <td>{{ partida.unidad_medida|blank_if_none }}</td>
-                                    <td>{{ partida.despacho_en_frontera|blank_if_none }}</td>
-                                    <td>{{ partida.tipo_de_doc|blank_if_none }}</td>
-                                    <td>{{ partida.entidad_que_emite|blank_if_none }}</td>
-                                    <td>{{ partida.disposicion_legal|blank_if_none }}</td>
-                                    <td>{{ partida.can_ace_36_47_ven|blank_if_none }}</td>
-                                    <td>{{ partida.ace_22_chile|blank_if_none }}</td>
-                                    <td>{{ partida.ace_22_prot|blank_if_none }}</td>
-                                    <td>{{ partida.ace_66_mexico|blank_if_none }}</td>
-                                </tr>
-                                {% for subpartida in partida.subpartidas.all %}
-                                    <tr id="subpartida-{{ subpartida.codigo }}">
-                                        <td class="text-left">{{ subpartida.codigo }}</td>
-                                        <td class="text-left">{{ subpartida.descripcion }}</td>
-                                        <td>{{ subpartida.ga|blank_if_none }}</td>
-                                        <td>{{ subpartida.ice_iehd|blank_if_none }}</td>
-                                        <td>{{ subpartida.unidad_medida|blank_if_none }}</td>
-                                        <td>{{ subpartida.despacho_en_frontera|blank_if_none }}</td>
-                                        <td>{{ subpartida.tipo_de_doc|blank_if_none }}</td>
-                                        <td>{{ subpartida.entidad_que_emite|blank_if_none }}</td>
-                                        <td>{{ subpartida.disposicion_legal|blank_if_none }}</td>
-                                        <td>{{ subpartida.can_ace_36_47_ven|blank_if_none }}</td>
-                                        <td>{{ subpartida.ace_22_chile|blank_if_none }}</td>
-                                        <td>{{ subpartida.ace_22_prot|blank_if_none }}</td>
-                                        <td>{{ subpartida.ace_66_mexico|blank_if_none }}</td>
-                                    </tr>
-                                {% endfor %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endfor %}
+    <!-- Barra superior -->
+    <div id="top-bar">
+        <h1>SisArm</h1>
+        <div id="user-icon">
+            <div id="user-icon" style="font-size: 24px; filter: brightness(0) invert(1);">👤</div>
         </div>
-    {% endfor %}
+    </div>
+
+    <!-- Barra lateral -->
+    <div id="sidebar" class="open">
+        <button id="toggle-btn">☰</button>
+        <div id="search-icon"></div>
+        <div id="search-container">
+            <h3 id="sidebar-title">Búsqueda de Aranceles</h3>
+            <input type="text" id="search" placeholder="Buscar..." autocomplete="off">
+            <ul id="suggestions"></ul>
+        </div>
+    </div>
+
+    <!-- Contenido principal -->
+    <div id="main-content" class="sidebar-open">
+        <h1>Tabla de Aranceles</h1>
+        
+        {% load custom_filters %}
+        {% for seccion in secciones %}
+            <div class="seccion">
+                <h2>Sección {{ seccion.id }}</h2>
+                <h3>{{ seccion.nombre|upper }}</h3>
+                {% if seccion.descripcion %}
+                    <p>{{ seccion.descripcion|linebreaks }}</p>
+                {% endif %}
+                
+                {% for capitulo in seccion.capitulos.all %}
+                    <div style="margin-top: 20px;">
+                        <h3>Capítulo {{ capitulo.codigo }}</h3>
+                        <h4>{{ capitulo.nombre|upper }}</h4>
+                        {% if capitulo.descripcion %}
+                            <p>{{ capitulo.descripcion|linebreaks }}</p>
+                        {% endif %}
+                        
+                        <table>
+                            <thead>
+                                <tr class="header-row">
+                                    <th rowspan="3">CÓDIGO</th>
+                                    <th rowspan="3">DESCRIPCIÓN</th>
+                                    <th rowspan="3">GA %</th>
+                                    <th rowspan="3">ICE/IEHD</th>
+                                    <th rowspan="3">UNIDAD DE MEDIDA</th>
+                                    <th rowspan="3">DESPACHO EN FRONTERA</th>
+                                    <th colspan="3">DOCUMENTO ADICIONAL</th>
+                                    <th colspan="4">PREFERENCIA ARANCELARIA</th>
+                                </tr>
+                                <tr class="subheader-row small-text">
+                                    <th rowspan="2">TIPO DOC</th>
+                                    <th rowspan="2">ENTIDAD QUE EMITE</th>
+                                    <th rowspan="2">DISP. LEGAL</th>
+                                    <th rowspan="2">CAN ACE 36 ACE 47 VEN</th>
+                                    <th colspan="2">ACE 22</th>
+                                    <th rowspan="2">ACE 66 MEXICO</th>
+                                </tr>
+                                <tr class="subheader-row small-text">
+                                    <th>Chi</th>
+                                    <th>Prot</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for partida in capitulo.partidas.all %}
+                                    <tr id="partida-{{ partida.codigo }}">
+                                        <td class="text-left">{{ partida.codigo }}</td>
+                                        <td class="text-left">{{ partida.descripcion }}</td>
+                                        <td>{{ partida.ga|blank_if_none }}</td>
+                                        <td>{{ partida.ice_iehd|blank_if_none }}</td>
+                                        <td>{{ partida.unidad_medida|blank_if_none }}</td>
+                                        <td>{{ partida.despacho_en_frontera|blank_if_none }}</td>
+                                        <td>{{ partida.tipo_de_doc|blank_if_none }}</td>
+                                        <td>{{ partida.entidad_que_emite|blank_if_none }}</td>
+                                        <td>{{ partida.disposicion_legal|blank_if_none }}</td>
+                                        <td>{{ partida.can_ace_36_47_ven|blank_if_none }}</td>
+                                        <td>{{ partida.ace_22_chile|blank_if_none }}</td>
+                                        <td>{{ partida.ace_22_prot|blank_if_none }}</td>
+                                        <td>{{ partida.ace_66_mexico|blank_if_none }}</td>
+                                    </tr>
+                                    {% for subpartida in partida.subpartidas.all %}
+                                        <tr id="subpartida-{{ subpartida.codigo }}">
+                                            <td class="text-left">{{ subpartida.codigo }}</td>
+                                            <td class="text-left">{{ subpartida.descripcion }}</td>
+                                            <td>{{ subpartida.ga|blank_if_none }}</td>
+                                            <td>{{ subpartida.ice_iehd|blank_if_none }}</td>
+                                            <td>{{ subpartida.unidad_medida|blank_if_none }}</td>
+                                            <td>{{ subpartida.despacho_en_frontera|blank_if_none }}</td>
+                                            <td>{{ subpartida.tipo_de_doc|blank_if_none }}</td>
+                                            <td>{{ subpartida.entidad_que_emite|blank_if_none }}</td>
+                                            <td>{{ subpartida.disposicion_legal|blank_if_none }}</td>
+                                            <td>{{ subpartida.can_ace_36_47_ven|blank_if_none }}</td>
+                                            <td>{{ subpartida.ace_22_chile|blank_if_none }}</td>
+                                            <td>{{ subpartida.ace_22_prot|blank_if_none }}</td>
+                                            <td>{{ subpartida.ace_66_mexico|blank_if_none }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
 
     <script>
+        // Funcionalidad de la barra lateral
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const toggleBtn = document.getElementById('toggle-btn');
+        
+        toggleBtn.addEventListener('click', function() {
+            if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                sidebar.classList.add('closed');
+                mainContent.classList.remove('sidebar-open');
+                mainContent.classList.add('sidebar-closed');
+                toggleBtn.innerHTML = '🔍';
+            } else {
+                sidebar.classList.remove('closed');
+                sidebar.classList.add('open');
+                mainContent.classList.remove('sidebar-closed');
+                mainContent.classList.add('sidebar-open');
+                toggleBtn.innerHTML = '☰';
+                // Enfocar el campo de búsqueda cuando se abre
+                setTimeout(() => {
+                    document.getElementById('search').focus();
+                }, 300);
+            }
+        });
+        
+        // Función para validar los criterios de búsqueda
+        function validateSearchQuery(query) {
+            // Si el query contiene solo números, debe tener al menos 6 dígitos
+            if (/^\d+$/.test(query)) {
+                return query.length >= 6;
+            }
+            
+            // Si contiene texto, debe tener al menos 2 palabras
+            const words = query.trim().split(/\s+/);
+            return words.length >= 2 && words.every(word => word.length > 0);
+        }
+        
+        // Funcionalidad de búsqueda
         document.getElementById('search').addEventListener('input', function() {
             const query = this.value;
             const suggestions = document.getElementById('suggestions');
 
-            if (query.length > 5) {  // Solo buscar si hay más de 2 caracteres
+            if (validateSearchQuery(query)) {  // Usar la nueva validación
                 fetch(`/arancel/search/?q=${query}`)
                     .then(response => response.json())
                     .then(data => {
@@ -200,25 +397,14 @@
                             const partidaHeader = document.createElement('li');
                             partidaHeader.textContent = 'Partidas:';
                             partidaHeader.style.fontWeight = 'bold';
+                            partidaHeader.style.backgroundColor = '#e9ecef';
                             suggestions.appendChild(partidaHeader);
 
                             partidas.forEach(item => {
                                 const li = document.createElement('li');
                                 li.textContent = `${item.codigo} - ${item.descripcion}`;
-                                li.dataset.targetId = 'partida-${item.codigo}'; // Agrega el ID del elemento objetivo
-                                li.addEventListener('click', () => {
-                                    const target = document.getElementById(li.dataset.targetId);
-                                    if (target) {
-                                        target.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Desplaza hacia la fila
-                                        // Resalta temporalmente
-                                        target.classList.add('highlight');
-                                        setTimeout(() => {
-                                            target.classList.remove('highlight');
-                                        }, 2000);
-                                    }
-                                    suggestions.innerHTML = '';
-                                    document.getElementById('search').value = item.codigo;
-                                });
+                                li.dataset.targetId = 'partida-' + item.codigo; // Agrega el ID del elemento objetivo
+                                li.addEventListener('click', () => scrollToElement(li.dataset.targetId, item.codigo));
                                 suggestions.appendChild(li);
                             });
                         }
@@ -227,49 +413,76 @@
                             const subpartidaHeader = document.createElement('li');
                             subpartidaHeader.textContent = 'Subpartidas:';
                             subpartidaHeader.style.fontWeight = 'bold';
+                            subpartidaHeader.style.backgroundColor = '#e9ecef';
                             suggestions.appendChild(subpartidaHeader);
 
                             subpartidas.forEach(item => {
                                 const li = document.createElement('li');
                                 li.textContent = `${item.codigo} - ${item.descripcion}`;
                                 li.dataset.targetId = `subpartida-${item.codigo}`; // Agrega el ID del elemento objetivo
-                                li.addEventListener('click', () => {
-                                    const target = document.getElementById(li.dataset.targetId);
-                                    if (target) {
-                                        target.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Desplaza hacia la fila
-                                        // Resalta temporalmente
-                                        target.classList.add('highlight');
-                                        setTimeout(() => {
-                                            target.classList.remove('highlight');
-                                        }, 2000);
-                                    }
-                                    suggestions.innerHTML = '';
-                                    document.getElementById('search').value = item.codigo;
-                                });
+                                li.addEventListener('click', () => scrollToElement(li.dataset.targetId, item.codigo));
                                 suggestions.appendChild(li);
                             });
                         }
+                        
+                        // Si no hay resultados, mostrar mensaje
+                        if (partidas.length === 0 && subpartidas.length === 0) {
+                            const noResultsLi = document.createElement('li');
+                            noResultsLi.textContent = 'No se encontraron resultados';
+                            noResultsLi.style.fontStyle = 'italic';
+                            noResultsLi.style.color = '#666';
+                            suggestions.appendChild(noResultsLi);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error en la búsqueda:', error);
+                        suggestions.innerHTML = '';
+                        const errorLi = document.createElement('li');
+                        errorLi.textContent = 'Error en la búsqueda';
+                        errorLi.style.color = '#dc3545';
+                        suggestions.appendChild(errorLi);
                     });
             } else {
-                suggestions.innerHTML = '';  // Limpia las sugerencias si no hay suficiente texto
+                suggestions.innerHTML = '';  // Limpia las sugerencias si no cumple los criterios
+                
+                // Mostrar mensaje de ayuda si hay texto pero no cumple los criterios
+                if (query.length > 0) {
+                    const helpLi = document.createElement('li');
+                    if (/^\d+$/.test(query)) {
+                        helpLi.textContent = 'El código debe tener al menos 6 dígitos';
+                    } else {
+                        helpLi.textContent = 'La descripción debe tener al menos 2 palabras';
+                    }
+                    helpLi.style.fontStyle = 'italic';
+                    helpLi.style.color = '#6c757d';
+                    helpLi.style.pointerEvents = 'none';
+                    suggestions.appendChild(helpLi);
+                }
             }
         });
-
+        
+        function scrollToElement(targetId, codigo) {
+            const target = document.getElementById(targetId);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.classList.add('highlight');
+                setTimeout(() => {
+                    target.classList.remove('highlight');
+                }, 2000);
+            }
+            document.getElementById('suggestions').innerHTML = '';
+            document.getElementById('search').value = codigo;
+        }
+        
+        // Manejar Enter en el buscador
         document.getElementById('search').addEventListener('keydown', function(event) {
             const suggestions = document.getElementById('suggestions');
             if (event.key === 'Enter' && suggestions.firstChild) {
                 const firstSuggestion = suggestions.querySelector('li[data-target-id]');
                 if (firstSuggestion) {
-                    const target = document.getElementById(firstSuggestion.dataset.targetId);
-                    if (target) {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        target.classList.add('highlight');
-                        setTimeout(() => {
-                            target.classList.remove('highlight');
-                        }, 2000);
-                    }
-                    suggestions.innerHTML = '';
-                    this.value = firstSuggestion.textContent.split(' - ')[0];
+                    const targetId = firstSuggestion.dataset.targetId;
+                    const codigo = firstSuggestion.textContent.split(' - ')[0];
+                    scrollToElement(targetId, codigo);
                 }
                 event.preventDefault();
             }
