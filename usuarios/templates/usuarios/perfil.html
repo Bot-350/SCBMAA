@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>SisArm - Sistema de Aranceles</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - SisArm</title>
     <style>
         :root {
             --primary-dark: #2c3e50;
@@ -33,9 +35,11 @@
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 50%, var(--primary-light) 100%);
             min-height: 100vh;
             color: var(--primary-dark);
+            position: relative;
+            overflow-x: hidden;
         }
         
-        /* Barra superior */
+        /* Barra superior - IGUAL QUE LA PRIMERA PÁGINA */
         #top-bar {
             position: fixed;
             top: 0;
@@ -67,7 +71,7 @@
         }
         
         #user-icon {
-            color: white;  /* Fuerza el color blanco */
+            color: white;
             font-size: 24px;
             cursor: pointer;
             padding: 8px;
@@ -76,7 +80,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            filter: brightness(0) invert(1);  /* Convierte el emoji a blanco */
+            filter: brightness(0) invert(1);
         }
         
         #user-icon:hover {
@@ -191,310 +195,175 @@
         #dropdown-overlay.show {
             display: block;
         }
-        
-        /* Container principal */
+
+        /* Elementos decorativos de fondo */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 50%;
+            top: 10%;
+            left: 10%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: rgba(46, 204, 113, 0.1);
+            border-radius: 50%;
+            top: 60%;
+            right: 15%;
+            animation: float 8s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Contenido principal */
         .main-container {
-            margin-top: 70px;
-            min-height: calc(100vh - 70px);
+            padding-top: 100px;
+            padding-bottom: 40px;
+            min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 60px 20px;
         }
-        
-        /* Título de bienvenida */
-        .welcome-section {
+
+        .profile-container {
+            max-width: 500px;
+            width: 90%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            color: #2c3e50;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .profile-header {
             text-align: center;
-            margin-bottom: 80px;
-            animation: fadeInUp 1s ease-out;
+            margin-bottom: 30px;
         }
-        
-        .welcome-section h2 {
-            font-size: 52px;
-            color: var(--white);
-            margin-bottom: 24px;
-            text-shadow: 3px 3px 6px var(--shadow-heavy);
-            font-weight: 300;
+
+        .profile-header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .profile-header p {
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
+
+        .profile-info {
+            background: rgba(44, 62, 80, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(44, 62, 80, 0.1);
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(44, 62, 80, 0.1);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        .info-value {
+            color: #34495e;
+            font-weight: 500;
+        }
+
+        .password-field {
+            color: #95a5a6;
+            font-style: italic;
             letter-spacing: 2px;
         }
-        
-        .welcome-section .highlight {
-            color: var(--accent-teal);
-            font-weight: 600;
-        }
-        
-        .welcome-section p {
-            font-size: 22px;
-            color: var(--neutral-light);
-            max-width: 700px;
-            margin: 0 auto;
-            line-height: 1.7;
-            text-shadow: 1px 1px 3px var(--shadow-medium);
-            font-weight: 300;
-        }
-        
-        /* Contenedor de botones */
+
         .buttons-container {
             display: flex;
             flex-direction: column;
-            gap: 30px;
-            max-width: 550px;
-            width: 100%;
-            animation: fadeInUp 1s ease-out 0.3s both;
+            gap: 15px;
         }
-        
-        /* Estilos de botones */
-        .main-button {
-            background: var(--white);
+
+        .btn {
+            width: 100%;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 15px 25px;
             border: none;
-            padding: 28px 45px;
-            border-radius: 20px;
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--primary-dark);
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 10px 30px var(--shadow-medium);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            position: relative;
-            overflow: hidden;
-            display: flex;
+            text-decoration: none;
+            display: inline-flex;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(44, 62, 80, 0.3);
         }
-        
-        .main-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            transition: left 0.6s ease;
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(44, 62, 80, 0.4);
+            background: linear-gradient(135deg, #34495e, #2c3e50);
         }
-        
-        .main-button:hover::before {
-            left: 100%;
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
         }
-        
-        .main-button:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 50px var(--shadow-heavy);
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #7f8c8d, #95a5a6);
         }
-        
-        .main-button:active {
-            transform: translateY(-4px) scale(0.98);
+
+        .messages {
+            margin-bottom: 25px;
         }
-        
-        /* Colores específicos para cada botón */
-        .button-arancel {
-            border-left: 6px solid var(--accent-red);
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+            backdrop-filter: blur(10px);
         }
-        
-        .button-arancel:hover {
-            background: linear-gradient(135deg, var(--white) 0%, rgba(231, 76, 60, 0.1) 100%);
-            border-left-width: 8px;
+
+        .alert-success {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            border-left-color: #27ae60;
         }
-        
-        .button-referencias {
-            border-left: 6px solid var(--accent-orange);
+
+        .alert-error {
+            background: rgba(231, 76, 60, 0.1);
+            color: #c0392b;
+            border-left-color: #c0392b;
         }
-        
-        .button-referencias:hover {
-            background: linear-gradient(135deg, var(--white) 0%, rgba(230, 126, 34, 0.1) 100%);
-            border-left-width: 8px;
-        }
-        
-        .button-notas {
-            border-left: 6px solid var(--accent-green);
-        }
-        
-        .button-notas:hover {
-            background: linear-gradient(135deg, var(--white) 0%, rgba(39, 174, 96, 0.1) 100%);
-            border-left-width: 8px;
-        }
-        
-        /* Iconos de los botones */
-        .main-button i {
-            margin-right: 18px;
-            font-size: 28px;
-            width: 35px;
-            text-align: center;
-        }
-        
-        .button-arancel i {
-            color: var(--accent-red);
-        }
-        
-        .button-referencias i {
-            color: var(--accent-orange);
-        }
-        
-        .button-notas i {
-            color: var(--accent-green);
-        }
-        
-        /* Animaciones */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        /* Efectos de partículas de fondo mejorados */
-        .background-decoration {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
-            overflow: hidden;
-        }
-        
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            animation: float 8s ease-in-out infinite;
-        }
-        
-        .particle:nth-child(1) {
-            width: 24px;
-            height: 24px;
-            top: 15%;
-            left: 10%;
-            background: rgba(52, 152, 219, 0.3);
-            animation-delay: 0s;
-        }
-        
-        .particle:nth-child(2) {
-            width: 18px;
-            height: 18px;
-            top: 45%;
-            left: 85%;
-            background: rgba(26, 188, 156, 0.4);
-            animation-delay: 2s;
-        }
-        
-        .particle:nth-child(3) {
-            width: 30px;
-            height: 30px;
-            top: 75%;
-            left: 15%;
-            background: rgba(230, 126, 34, 0.3);
-            animation-delay: 4s;
-        }
-        
-        .particle:nth-child(4) {
-            width: 22px;
-            height: 22px;
-            top: 25%;
-            left: 75%;
-            background: rgba(231, 76, 60, 0.3);
-            animation-delay: 1s;
-        }
-        
-        .particle:nth-child(5) {
-            width: 16px;
-            height: 16px;
-            top: 65%;
-            left: 65%;
-            background: rgba(39, 174, 96, 0.4);
-            animation-delay: 3s;
-        }
-        
-        .particle:nth-child(6) {
-            width: 20px;
-            height: 20px;
-            top: 85%;
-            left: 45%;
-            background: rgba(155, 89, 182, 0.3);
-            animation-delay: 5s;
-        }
-        
-        @keyframes float {
-            0%, 100% {
-                transform: translateY(0px) rotate(0deg) scale(1);
-                opacity: 0.6;
-            }
-            25% {
-                transform: translateY(-15px) rotate(90deg) scale(1.1);
-                opacity: 0.8;
-            }
-            50% {
-                transform: translateY(-25px) rotate(180deg) scale(1);
-                opacity: 1;
-            }
-            75% {
-                transform: translateY(-15px) rotate(270deg) scale(0.9);
-                opacity: 0.8;
-            }
-        }
-        
-        /* Elementos decorativos adicionales */
-        .geometric-shapes {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
-        }
-        
-        .shape {
-            position: absolute;
-            opacity: 0.1;
-        }
-        
-        .shape-1 {
-            width: 200px;
-            height: 200px;
-            background: linear-gradient(45deg, var(--accent-blue), var(--accent-teal));
-            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-            top: 10%;
-            right: 10%;
-            animation: morphShape 12s ease-in-out infinite;
-        }
-        
-        .shape-2 {
-            width: 150px;
-            height: 150px;
-            background: linear-gradient(45deg, var(--accent-orange), var(--accent-red));
-            border-radius: 50% 20% 80% 40%;
-            bottom: 15%;
-            left: 8%;
-            animation: morphShape 15s ease-in-out infinite reverse;
-        }
-        
-        @keyframes morphShape {
-            0%, 100% {
-                border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-                transform: rotate(0deg) scale(1);
-            }
-            25% {
-                border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%;
-                transform: rotate(90deg) scale(1.1);
-            }
-            50% {
-                border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%;
-                transform: rotate(180deg) scale(0.9);
-            }
-            75% {
-                border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%;
-                transform: rotate(270deg) scale(1.05);
-            }
-        }
-        
+
         /* Responsive */
         @media (max-width: 768px) {
             #top-bar {
@@ -507,48 +376,23 @@
             }
             
             .main-container {
-                margin-top: 60px;
-                min-height: calc(100vh - 60px);
-                padding: 40px 20px;
+                padding-top: 80px;
             }
             
-            .welcome-section {
-                margin-bottom: 60px;
+            .profile-container {
+                padding: 30px 20px;
+                margin: 20px;
             }
             
-            .welcome-section h2 {
-                font-size: 40px;
-            }
-            
-            .welcome-section p {
-                font-size: 18px;
-                padding: 0 10px;
-            }
-            
-            .buttons-container {
-                padding: 0 10px;
-                gap: 25px;
-            }
-            
-            .main-button {
-                padding: 22px 35px;
-                font-size: 18px;
+            .btn {
+                font-size: 0.9rem;
+                padding: 12px 20px;
             }
         }
-        
+
         @media (max-width: 480px) {
-            .welcome-section h2 {
-                font-size: 32px;
-            }
-            
-            .main-button {
-                padding: 20px 30px;
-                font-size: 16px;
-            }
-            
-            .main-button i {
-                font-size: 24px;
-                margin-right: 15px;
+            .profile-container {
+                padding: 25px 15px;
             }
         }
     </style>
@@ -557,7 +401,7 @@
     <!-- Overlay para cerrar el menú -->
     <div id="dropdown-overlay"></div>
 
-    <!-- Barra superior -->
+    <!-- Barra superior - IGUAL QUE LA PRIMERA PÁGINA -->
     <div id="top-bar">
         <h1>SisArm</h1>
         <div id="user-container">
@@ -575,49 +419,50 @@
         </div>
     </div>
 
-    <!-- Decoración de fondo -->
-    <div class="background-decoration">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-    </div>
-
-    <!-- Formas geométricas decorativas -->
-    <div class="geometric-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-    </div>
-
-    <!-- Contenido principal -->
     <div class="main-container">
-        <div class="welcome-section">
-            <h2>Bienvenido a <span class="highlight">SisArm</span></h2>
-            <p>Sistema integral de consulta arancelaria y clasificación de mercancías. Accede a toda la información que necesitas de manera rápida y eficiente.</p>
-        </div>
+        <div class="profile-container">
+            <div class="profile-header">
+                <h1>Mi Perfil</h1>
+                <p>Información de tu cuenta</p>
+            </div>
 
-        <div class="buttons-container">
-            <button class="main-button button-arancel" onclick="goToArancel()">
-                <i>📊</i>
-                Arancel de Aduanas
-            </button>
-            
-            <button class="main-button button-referencias" onclick="goToReferencias()">
-                <i>🔍</i>
-                Referencias de Clasificación
-            </button>
-            
-            <button class="main-button button-notas" onclick="goToNotas()">
-                <i>📝</i>
-                Notas Explicativas
-            </button>
+            <!-- Simulación de mensajes para demostración -->
+            <div class="messages" style="display: none;">
+                <div class="alert alert-success">
+                    Perfil actualizado correctamente
+                </div>
+            </div>
+
+            <div class="profile-info">
+                <div class="info-item">
+                    <span class="info-label">Nombre de usuario:</span>
+                    <span class="info-value">{{ user.username }}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ user.email}}</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="info-label">Contraseña:</span>
+                    <span class="info-value password-field">••••••••</span>
+                </div>
+            </div>
+
+            <div class="buttons-container">
+                <a href="#" class="btn" onclick="alert('Función de cambio de contraseña');">
+                    🔒 Cambiar Contraseña
+                </a>
+                <a href="#" class="btn btn-secondary" onclick="goToHome();">
+                    ← Volver al Inicio
+                </a>
+            </div>
         </div>
     </div>
 
     <script>
-        // Funcionalidad del menú desplegable del usuario
+        // Funcionalidad del menú desplegable del usuario - IGUAL QUE LA PRIMERA PÁGINA
         const userIcon = document.getElementById('user-icon');
         const userDropdown = document.getElementById('user-dropdown');
         const dropdownOverlay = document.getElementById('dropdown-overlay');
@@ -658,7 +503,8 @@
         
         // Función para ir a la página de perfil/configuración
         function goToProfile() {
-            window.location.href = "/perfil";
+            // Ya estamos en perfil, no hacer nada o refrescar
+            console.log("Ya estás en la página de perfil");
         }
         
         // Manejar el clic en configuración
@@ -766,68 +612,11 @@
             }
         });
 
-        // Funciones de navegacion
-        function goToArancel() {
-            window.location.href = "/aranceles/tabla/";
+        // Función para volver al inicio
+        function goToHome() {
+            window.location.href = "/";
         }
 
-        function goToReferencias() {
-            console.log("Función no implementada aún");
-        }
-
-        function goToNotas() {
-            console.log("Función no implementada aún");
-        }
-
-        // Efectos adicionales al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
-            const buttons = document.querySelectorAll('.main-button');
-            
-            buttons.forEach(button => {
-                button.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-8px) scale(1.02)';
-                });
-                
-                button.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0) scale(1)';
-                });
-            });
-        });
-
-        // Crear partículas dinámicas mejoradas
-        function createParticle() {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            
-            const colors = [
-                'rgba(52, 152, 219, 0.3)',
-                'rgba(26, 188, 156, 0.3)',
-                'rgba(230, 126, 34, 0.3)',
-                'rgba(231, 76, 60, 0.3)',
-                'rgba(39, 174, 96, 0.3)'
-            ];
-            
-            const size = Math.random() * 25 + 15;
-            particle.style.width = size + 'px';
-            particle.style.height = size + 'px';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.top = Math.random() * 100 + '%';
-            particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-            particle.style.animationDelay = Math.random() * 8 + 's';
-            particle.style.animationDuration = (Math.random() * 6 + 6) + 's';
-            
-            document.querySelector('.background-decoration').appendChild(particle);
-            
-            setTimeout(() => {
-                if (particle.parentNode) {
-                    particle.parentNode.removeChild(particle);
-                }
-            }, 12000);
-        }
-
-        // Crear partículas adicionales periódicamente
-        setInterval(createParticle, 4000);
-        
         // Sistema de inactividad mejorado
         let inactivityTimer;
         const INACTIVITY_TIME = 30 * 60 * 1000; // 30 minutos

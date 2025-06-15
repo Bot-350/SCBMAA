@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - SCMAA</title>
+    <title>Iniciar Sesión</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #3d566e 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -21,27 +21,30 @@
         }
         
         .login-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(44, 62, 80, 0.3);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
+            border: 1px solid rgba(44, 62, 80, 0.1);
         }
         
         .login-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
         
         .login-header h1 {
-            color: #333;
+            color: #2c3e50;
             margin-bottom: 0.5rem;
+            font-size: 2rem;
+            font-weight: 600;
         }
         
         .login-header p {
-            color: #666;
-            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-size: 0.95rem;
         }
         
         .form-group {
@@ -51,68 +54,116 @@
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            color: #333;
+            color: #2c3e50;
             font-weight: 500;
+            font-size: 0.95rem;
         }
         
         .form-group input {
             width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e1e5e9;
-            border-radius: 5px;
+            padding: 0.875rem;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
             font-size: 1rem;
-            transition: border-color 0.3s ease;
+            transition: all 0.3s ease;
+            background-color: #ffffff;
         }
         
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #2c3e50;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+        }
+        
+        .form-group input:hover {
+            border-color: #95a5a6;
         }
         
         .btn {
             width: 100%;
-            padding: 0.75rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 0.875rem;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 1rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .btn:hover {
             transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(44, 62, 80, 0.3);
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
         }
         
         .messages {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
         
         .alert {
-            padding: 0.75rem;
-            border-radius: 5px;
+            padding: 0.875rem;
+            border-radius: 8px;
             margin-bottom: 0.5rem;
+            font-weight: 500;
         }
         
         .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background-color: #fadbd8;
+            color: #c0392b;
+            border: 1px solid #f1948a;
         }
         
         .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background-color: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #82e5aa;
+        }
+        
+        /* Efectos adicionales */
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(44, 62, 80, 0.03), transparent);
+            animation: shine 3s infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .login-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 1rem;
+                padding: 2rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="login-header">
-            <h1>SCMAA</h1>
-            <p>Iniciar Sesión</p>
+            <h1>Iniciar Sesión</h1>
         </div>
         
         {% if messages %}
