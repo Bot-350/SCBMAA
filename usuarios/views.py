@@ -5,6 +5,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
+from django.utils import timezone
+from django.db.models import Count
+
+from .models import SearchLog # Assuming SearchLog is in usuarios/models.py
 
 def login_view(request):
     if request.method == 'POST':
@@ -56,3 +60,41 @@ def change_password(request):
         form = PasswordChangeForm(request.user)
     
     return render(request, 'usuarios/re_contraseña.html', {'form': form})
+
+@login_required
+def search_logs_dashboard_view(request):
+    # Daily Logs
+    today = timezone.now().date()
+    daily_logs = SearchLog.objects.filter(timestamp__date=today).order_by('-timestamp')
+
+    # User List for selection
+    users_list = User.objects.all().order_by('username')
+
+    # User-Specific Logs
+    selected_user_id = request.GET.get('user_id')
+    selected_user_logs = None
+    selected_user_instance = None
+
+    if selected_user_id:
+        try:
+            # Ensure selected_user_id is a valid integer
+            selected_user_id = int(selected_user_id)
+            selected_user_instance = User.objects.get(id=selected_user_id)
+            selected_user_logs = SearchLog.objects.filter(user_id=selected_user_id).order_by('-timestamp')
+        except (ValueError, User.DoesNotExist):
+            messages.error(request, "Usuario seleccionado no válido.")
+            selected_user_id = None # Reset if invalid
+
+    # Most Searched Terms
+    most_searched_terms = SearchLog.objects.values('term').annotate(count=Count('term')).order_by('-count')[:10]
+
+    context = {
+        'daily_logs': daily_logs,
+        'users_list': users_list,
+        'selected_user_logs': selected_user_logs,
+        'selected_user_instance': selected_user_instance, # Pass the user instance for display
+        'selected_user_id': selected_user_id, # Pass the ID for template logic (e.g., pre-selecting in dropdown)
+        'most_searched_terms': most_searched_terms,
+        'page_title': 'Dashboard de Búsquedas' # Added for clarity in template
+    }
+    return render(request, 'usuarios/search_logs_page.html', context)
