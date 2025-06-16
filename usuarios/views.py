@@ -53,7 +53,7 @@ def change_password(request):
             # Mantener la sesión activa después del cambio de contraseña
             update_session_auth_hash(request, user)
             messages.success(request, 'Tu contraseña ha sido cambiada exitosamente.')
-            return redirect('perfil')
+            return redirect('usuarios:perfil') # Corrected redirect
         else:
             messages.error(request, 'Por favor corrige los errores.')
     else:
