@@ -1,805 +1,408 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabla de Aranceles</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            transition: margin-left 0.3s ease;
-        }
+        /* Estilos Generales */
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; transition: margin-left 0.3s ease; background-color: #f4f7f6; }
+        #top-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; background-color: #2c3e50; z-index: 1001; display: flex; align-items: center; padding: 0 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        #top-bar h1 { color: white; margin: 0; font-size: 24px; font-weight: bold; cursor: pointer; transition: opacity 0.3s ease; text-decoration: none; }
+        #user-container { margin-left: auto; position: relative; }
+        #user-icon { color: white; font-size: 24px; cursor: pointer; padding: 8px; border-radius: 50%; transition: background-color 0.3s ease; display: flex; align-items: center; justify-content: center; filter: brightness(0) invert(1); }
+        #user-icon:hover { background-color: rgba(255,255,255,0.1); }
+        #user-dropdown { position: absolute; top: calc(100% + 5px); right: 0; background-color: white; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 150px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; z-index: 1002; }
+        #user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        #user-dropdown::before { content: ''; position: absolute; top: -8px; right: 12px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid white; }
+        .dropdown-item { padding: 12px 16px; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #eee; display: flex; align-items: center; color: #333; text-decoration: none; }
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:hover { background-color: #f8f9fa; }
+        .dropdown-item .icon { margin-right: 10px; font-size: 16px; }
+        .logout-item { color: #dc3545; }
+        .logout-item:hover { background-color: #fdf2f2; }
+        #sidebar { position: fixed; top: 60px; left: 0; height: calc(100vh - 60px); background-color: #2c3e50; transition: width 0.3s ease; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.1); overflow: hidden; }
+        #sidebar.closed { width: 60px; }
+        #sidebar.open { width: 350px; }
+        #toggle-btn { position: absolute; top: 15px; right: 15px; background: #34495e; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 20px; transition: all 0.3s ease; width: 45px; text-align: center; }
+        #toggle-btn:hover { background: #4a6741; }
+        #sidebar.closed #toggle-btn { right: 50%; transform: translateX(50%); }
+        #search-container { padding: 60px 20px 20px 20px; opacity: 1; transition: opacity 0.3s ease; }
+        #sidebar.closed #search-container { opacity: 0; pointer-events: none; }
+        #search { width: 100%; padding: 12px; font-size: 16px; border: none; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); box-sizing: border-box; }
+        #suggestions { list-style: none; margin: 10px 0 0 0; padding: 0; border: 1px solid #ccc; max-height: 300px; overflow-y: auto; background-color: #fff; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none; }
+        #suggestions.show { display: block; }
+        #suggestions li { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 13px; }
+        #suggestions li:hover { background-color: #f8f9fa; }
+        #suggestions li.no-results { font-style: italic; color: #666; cursor: default; }
+        #sidebar-title { color: white; text-align: center; margin: 0 0 20px 0; font-size: 18px; font-weight: bold; opacity: 1; transition: opacity 0.3s ease; }
+        #sidebar.closed #sidebar-title { opacity: 0; }
+        #main-content { transition: margin-left 0.3s ease; padding: 20px; margin-top: 60px; }
+        #main-content.sidebar-open { margin-left: 350px; }
+        #main-content.sidebar-closed { margin-left: 60px; }
+
+        /* --- ESTILOS DE LA TABLA (MODIFICADOS) --- */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #2c3e50; }
+        th, td { border: 1px solid #bdc3c7; padding: 10px 8px; text-align: center; vertical-align: middle; }
+        th { background-color: #2c3e50; color: white; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        .text-left { text-align: left; }
+        .highlight { background-color: #ffeb3b !important; transition: background-color 3s ease-out; }
+        .highlight td { background-color: #ffeb3b !important; }
+        .partida-row td { background-color: #3498db; color: white; font-weight: bold; border-top: 2px solid #5f81a3 !important; }
+        .titulo-row td { background-color: #aed6f1; color: #307097; font-style: italic; }
+        .subpartida-descripcion { padding-left: 30px !important; }
         
-        /* Barra superior */
-        #top-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background-color: #2c3e50;
-            z-index: 1001;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        #top-bar h1 {
-            color: white;
-            margin: 0;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: opacity 0.3s ease;
-            text-decoration: none;
-        }
-        
-        #top-bar h1:hover {
-            opacity: 0.8;
-        }
-        
-        /* Contenedor del usuario con menú desplegable */
-        #user-container {
-            margin-left: auto;
-            position: relative;
-        }
-        
-        #user-icon {
-            color: white;  
-            font-size: 24px;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            transition: background-color 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            filter: brightness(0) invert(1);  
-        }
-        
-        #user-icon:hover {
-            background-color: rgba(255,255,255,0.1);
-        }
-        
-        /* Menú desplegable */
-        #user-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            min-width: 150px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-            z-index: 1002;
-        }
-        
-        #user-dropdown.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
-        #user-dropdown::before {
-            content: '';
-            position: absolute;
-            top: -8px;
-            right: 12px;
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-bottom: 8px solid white;
-        }
-        
-        .dropdown-item {
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-            color: #333;
-            text-decoration: none;
-        }
-        
-        .dropdown-item:last-child {
-            border-bottom: none;
-            border-radius: 0 0 5px 5px;
-        }
-        
-        .dropdown-item:first-child {
-            border-radius: 5px 5px 0 0;
-        }
-        
-        .dropdown-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .dropdown-item:active {
-            background-color: #e9ecef;
-        }
-        
-        .dropdown-item .icon {
-            margin-right: 10px;
-            font-size: 16px;
-        }
-        
-        .logout-item {
-            color: #dc3545;
-        }
-        
-        .logout-item:hover {
-            background-color: #fdf2f2;
-        }
-        
-        /* Indicador de carga para logout */
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-        
-        .loading::after {
-            content: '...';
-            animation: loading-dots 1.5s infinite;
-        }
-        
-        @keyframes loading-dots {
-            0%, 20% { opacity: 0; }
-            50% { opacity: 1; }
-            80%, 100% { opacity: 0; }
-        }
-        
-        /* Barra lateral */
-        #sidebar {
-            position: fixed;
-            top: 60px;
-            left: 0;
-            height: calc(100vh - 60px);
-            background-color: #2c3e50;
-            transition: width 0.3s ease;
-            z-index: 1000;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        
-        #sidebar.closed {
-            width: 60px;
-        }
-        
-        #sidebar.open {
-            width: 350px;
-        }
-        
-        /* Botón toggle */
-        #toggle-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #34495e;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-        
-        #toggle-btn:hover {
-            background: #4a6741;
-        }
-        
-        /* Icono cuando está cerrado */
-        #sidebar.closed #toggle-btn {
-            right: 50%;
-            transform: translateX(50%);
-        }
-        
-        /* Contenedor del buscador */
-        #search-container {
-            padding: 60px 20px 20px 20px;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-        }
-        
-        #sidebar.closed #search-container {
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        #search {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            box-sizing: border-box;
-        }
-        
-        #suggestions {
-            list-style: none;
-            margin: 10px 0 0 0;
-            padding: 0;
-            border: 1px solid #ccc;
-            max-height: 300px;
-            overflow-y: auto;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        #suggestions li {
-            padding: 12px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-        }
-        
-        #suggestions li:hover {
-            background-color: #f8f9fa;
-        }
-        
-        #suggestions li:last-child {
-            border-bottom: none;
-        }
-        
-        /* Título en la barra lateral */
-        #sidebar-title {
-            color: white;
-            text-align: center;
-            margin: 0 0 20px 0;
-            font-size: 18px;
-            font-weight: bold;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-        }
-        
-        #sidebar.closed #sidebar-title {
-            opacity: 0;
-        }
-        
-        /* Ajuste del contenido principal */
-        #main-content {
-            transition: margin-left 0.3s ease;
-            padding: 20px;
-            margin-top: 60px;
-        }
-        
-        #main-content.sidebar-open {
-            margin-left: 350px;
-        }
-        
-        #main-content.sidebar-closed {
-            margin-left: 60px;
-        }
-        
-        /* Estilos de la tabla (mantenidos del original) */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-        th, td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: center;
-            vertical-align: middle;
-        }
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-        .seccion {
-            margin-bottom: 40px;
-            page-break-inside: avoid;
-        }
-        .header-row {
-            background-color: #e0e0e0;
-        }
-        .subheader-row {
-            background-color: #f0f0f0;
-        }
-        .text-left {
-            text-align: left;
-        }
-        .small-text {
-            font-size: 12px;
-        }
-        td:empty::after {
-            content: "\00a0";
-        }
-        
-        /* Resaltar fila al hacer scroll */
-        .highlight {
-            background-color: #ffeb3b;
-            transition: background-color 2s ease-out;
-        }
-        
-        /* Icono de búsqueda cuando está cerrado */
-        #search-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 24px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-        
-        #sidebar.closed #search-icon {
-            opacity: 1;
-        }
-        
-        /* Overlay para cerrar el menú desplegable */
-        #dropdown-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 999;
-            display: none;
-        }
-        
-        #dropdown-overlay.show {
-            display: block;
-        }
+        /* Estilos para el contenedor de notas */
+        .notas-container { background-color: #eaf2f8; border-left: 4px solid #3498db; padding: 15px 20px; margin: 20px 0; border-radius: 4px; font-size: 14px; }
+        .notas-container h4 { margin: 0 0 10px 0; color: #2b6b96; }
+        .notas-container ul { padding-left: 20px; margin: 0; list-style-type: none; }
+        .notas-container li { margin-bottom: 8px; line-height: 1.5; display: flex; }
+        .notas-container li .letra { font-weight: bold; margin-right: 8px; }
     </style>
 </head>
 <body>
-    <!-- Overlay para cerrar el menú -->
-    <div id="dropdown-overlay"></div>
 
-    <!-- Barra superior -->
     <div id="top-bar">
         <h1 id="home-link">SisArm</h1>
         <div id="user-container">
-            <div id="user-icon" style="color: white;">👤</div>
+            <div id="user-icon">👤</div>
             <div id="user-dropdown">
-                <div class="dropdown-item">
-                    <span class="icon">⚙️</span>
-                    <span>Configuración</span>
-                </div>
-                <div class="dropdown-item logout-item" id="logout-btn">
-                    <span class="icon">🚪</span>
-                    <span>Cerrar Sesión</span>
-                </div>
+                <div class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></div>
+                <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
             </div>
         </div>
     </div>
 
-    <!-- Barra lateral -->
     <div id="sidebar" class="open">
         <button id="toggle-btn">☰</button>
-        <div id="search-icon"></div>
         <div id="search-container">
             <h3 id="sidebar-title">Búsqueda de Aranceles</h3>
-            <input type="text" id="search" placeholder="Buscar..." autocomplete="off">
+            <input type="text" id="search" placeholder="Buscar por código o descripción..." autocomplete="off">
             <ul id="suggestions"></ul>
         </div>
     </div>
 
-    <!-- Contenido principal -->
     <div id="main-content" class="sidebar-open">
         <h1>Tabla de Aranceles</h1>
-        
+
         {% load custom_filters %}
         {% for seccion in secciones %}
             <div class="seccion">
-                <h2>Sección {{ seccion.id }}</h2>
-                <h3>{{ seccion.nombre|upper }}</h3>
-                {% if seccion.descripcion %}
-                    <p>{{ seccion.descripcion|linebreaks }}</p>
-                {% endif %}
+                <h2>{{ seccion|upper }}</h2>
+                {% if seccion.descripcion %}<p>{{ seccion.descripcion|linebreaks }}</p>{% endif %}
+                
+                <!-- ===== BLOQUE 1 CORREGIDO: NOTAS DE SECCIÓN ===== -->
+                {% for nota in seccion.notas.all %}
+                    <div class="notas-container">
+                        <h4>{{ nota.get_tipo_display|upper }}</h4>
+                        {% if nota.es_lista %}
+                            <p><strong>{{ nota.titulo_lista }}</strong></p>
+                            <ul>
+                                {% for item_nota in nota.items.all %}
+                                    <li><span class="letra">{{ item_nota.letra }}</span> <span>{{ item_nota.texto }}</span></li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>{{ nota.texto }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
                 
                 {% for capitulo in seccion.capitulos.all %}
-                    <div style="margin-top: 20px;">
-                        <h3>Capítulo {{ capitulo.codigo }}</h3>
-                        <h4>{{ capitulo.nombre|upper }}</h4>
-                        {% if capitulo.descripcion %}
-                            <p>{{ capitulo.descripcion|linebreaks }}</p>
-                        {% endif %}
+                  <div style="margin-top: 20px;">
+                    <h3>{{ capitulo|upper }}</h3>
+                    {% if capitulo.descripcion %}<p>{{ capitulo.descripcion|linebreaks }}</p>{% endif %}
                         
-                        <table>
-                            <thead>
-                                <tr class="header-row">
-                                    <th rowspan="3">CÓDIGO</th>
-                                    <th rowspan="3">DESCRIPCIÓN</th>
-                                    <th rowspan="3">GA %</th>
-                                    <th rowspan="3">ICE/IEHD</th>
-                                    <th rowspan="3">UNIDAD DE MEDIDA</th>
-                                    <th rowspan="3">DESPACHO EN FRONTERA</th>
-                                    <th colspan="3">DOCUMENTO ADICIONAL</th>
-                                    <th colspan="4">PREFERENCIA ARANCELARIA</th>
-                                </tr>
-                                <tr class="subheader-row small-text">
-                                    <th rowspan="2">TIPO DOC</th>
-                                    <th rowspan="2">ENTIDAD QUE EMITE</th>
-                                    <th rowspan="2">DISP. LEGAL</th>
-                                    <th rowspan="2">CAN ACE 36 ACE 47 VEN</th>
-                                    <th colspan="2">ACE 22</th>
-                                    <th rowspan="2">ACE 66 MEXICO</th>
-                                </tr>
-                                <tr class="subheader-row small-text">
-                                    <th>Chi</th>
-                                    <th>Prot</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for partida in capitulo.partidas.all %}
-                                    <tr id="partida-{{ partida.codigo }}">
-                                        <td class="text-left">{{ partida.codigo }}</td>
-                                        <td class="text-left">{{ partida.descripcion }}</td>
-                                        <td>{{ partida.ga|blank_if_none }}</td>
-                                        <td>{{ partida.ice_iehd|blank_if_none }}</td>
-                                        <td>{{ partida.unidad_medida|blank_if_none }}</td>
-                                        <td>{{ partida.despacho_en_frontera|blank_if_none }}</td>
-                                        <td>{{ partida.tipo_de_doc|blank_if_none }}</td>
-                                        <td>{{ partida.entidad_que_emite|blank_if_none }}</td>
-                                        <td>{{ partida.disposicion_legal|blank_if_none }}</td>
-                                        <td>{{ partida.can_ace_36_47_ven|blank_if_none }}</td>
-                                        <td>{{ partida.ace_22_chile|blank_if_none }}</td>
-                                        <td>{{ partida.ace_22_prot|blank_if_none }}</td>
-                                        <td>{{ partida.ace_66_mexico|blank_if_none }}</td>
-                                    </tr>
-                                    {% for subpartida in partida.subpartidas.all %}
-                                        <tr id="subpartida-{{ subpartida.codigo }}">
-                                            <td class="text-left">{{ subpartida.codigo }}</td>
-                                            <td class="text-left">{{ subpartida.descripcion }}</td>
-                                            <td>{{ subpartida.ga|blank_if_none }}</td>
-                                            <td>{{ subpartida.ice_iehd|blank_if_none }}</td>
-                                            <td>{{ subpartida.unidad_medida|blank_if_none }}</td>
-                                            <td>{{ subpartida.despacho_en_frontera|blank_if_none }}</td>
-                                            <td>{{ subpartida.tipo_de_doc|blank_if_none }}</td>
-                                            <td>{{ subpartida.entidad_que_emite|blank_if_none }}</td>
-                                            <td>{{ subpartida.disposicion_legal|blank_if_none }}</td>
-                                            <td>{{ subpartida.can_ace_36_47_ven|blank_if_none }}</td>
-                                            <td>{{ subpartida.ace_22_chile|blank_if_none }}</td>
-                                            <td>{{ subpartida.ace_22_prot|blank_if_none }}</td>
-                                            <td>{{ subpartida.ace_66_mexico|blank_if_none }}</td>
-                                        </tr>
+                    <!-- ===== BLOQUE 2 CORREGIDO: NOTAS DE CAPÍTULO ===== -->
+                    {% for nota in capitulo.notas.all %}
+                        <div class="notas-container">
+                            <h4>NOTA DE CAPÍTULO</h4>
+                            {% if nota.es_lista %}
+                                <p><strong>{{ nota.titulo_lista }}</strong></p>
+                                <ul>
+                                    {% for item_nota in nota.items.all %}
+                                        <li><span class="letra">{{ item_nota.letra }}</span> <span>{{ item_nota.texto }}</span></li>
                                     {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p>{{ nota.texto }}</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                        
+                    <table>
+                        <thead>
+                            <tr class="header-row">
+                                <th rowspan="3">CÓDIGO</th>
+                                <th rowspan="3">DESCRIPCIÓN</th>
+                                <th rowspan="3">GA %</th>
+                                <th rowspan="3">ICE/IEHD</th>
+                                <th rowspan="3">UNIDAD DE MEDIDA</th>
+                                <th rowspan="3">DESPACHO EN FRONTERA</th>
+                                <th colspan="3">DOCUMENTO ADICIONAL</th>
+                                <th colspan="4">PREFERENCIA ARANCELARIA</th>
+                            </tr>
+                            <tr class="subheader-row small-text">
+                                <th rowspan="2">TIPO DOC</th>
+                                <th rowspan="2">ENTIDAD QUE EMITE</th>
+                                <th rowspan="2">DISP. LEGAL</th>
+                                <th rowspan="2">CAN ACE 36 ACE 47 VEN</th>
+                                <th colspan="2">ACE 22</th>
+                                <th rowspan="2">ACE 66 MEXICO</th>
+                            </tr>
+                            <tr class="subheader-row small-text">
+                                <th>Chi</th>
+                                <th>Prot</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for partida in capitulo.partidas.all %}
+                                <tr class="partida-row" data-codigo="{{ partida.codigo }}" data-descripcion="{{ partida.descripcion }}">
+                                    <td class="text-left">{{ partida.codigo }}</td>
+                                    <td class="text-left">{{ partida.descripcion }}</td>
+                                    <td colspan="11"></td>
+                                </tr>
+                                {% for item in partida.subpartidas.all %}
+                                    {% if item.codigo|slice:":3" == "_H_" %}
+                                        <tr class="titulo-row" data-codigo="{{ item.codigo }}" data-descripcion="{{ item.descripcion }}">
+                                            <td></td>
+                                            <td class="text-left"><strong>{{ item.descripcion }}</strong></td>
+                                            <td colspan="11"></td>
+                                        </tr>
+                                    {% else %}
+                                        <tr class="subpartida-row" data-codigo="{{ item.codigo }}" data-descripcion="{{ item.descripcion }}">
+                                            <td class="text-left">{{ item.codigo }}</td>
+                                            <td class="text-left subpartida-descripcion">{{ item.descripcion }}</td>
+                                            
+                                            <!-- ===== BLOQUE 3 CORREGIDO: GA% Y CELDAS VACÍAS ===== -->
+                                            <td>
+                                                {% if item.ga is not None %}
+                                                    {{ item.ga|floatformat:2 }}
+                                                {% else %}
+                                                     
+                                                {% endif %}
+                                            </td>
+                                            <td> </td> <!-- Celda para ICE/IEHD, vacía ya que no está en el modelo -->
+                                            <td>{{ item.unidad_medida|default_if_none:"" }}</td>
+                                            <td> </td> <!-- Celda para Despacho en Frontera, vacía ya que no está en el modelo -->
+                                            <td>{{ item.tipo_de_doc|default_if_none:"" }}</td>
+                                            <td>{{ item.entidad_que_emite|default_if_none:"" }}</td>
+                                            <td>{{ item.disposicion_legal|default_if_none:"" }}</td>
+                                            <td>{{ item.can_ace_36_47_ven|default_if_none:"" }}</td>
+                                            <td>{{ item.ace_22_chile|default_if_none:"" }}</td>
+                                            <td>{{ item.ace_22_prot|default_if_none:"" }}</td>
+                                            <td>{{ item.ace_66_mexico|default_if_none:"" }}</td>
+                                        </tr>
+                                    {% endif %}
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% endfor %}
             </div>
         {% endfor %}
     </div>
-
+    
     <script>
-        // Funcionalidad para el enlace de inicio
-        document.getElementById('home-link').addEventListener('click', function() {
-            window.location.href = '/';
-        });
-        
-        // Funcionalidad del menú desplegable del usuario
-        const userIcon = document.getElementById('user-icon');
-        const userDropdown = document.getElementById('user-dropdown');
-        const dropdownOverlay = document.getElementById('dropdown-overlay');
-        const logoutBtn = document.getElementById('logout-btn');
-        
-        // Mostrar/ocultar menú desplegable
-        userIcon.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleDropdown();
-        });
-        
-        // Cerrar menú al hacer clic en el overlay
-        dropdownOverlay.addEventListener('click', function() {
-            closeDropdown();
-        });
-        
-        // Función para alternar el menú desplegable
-        function toggleDropdown() {
-            if (userDropdown.classList.contains('show')) {
-                closeDropdown();
-            } else {
-                openDropdown();
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search');
+            const suggestions = document.getElementById('suggestions');
+            const toggleBtn = document.getElementById('toggle-btn');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            const userIcon = document.getElementById('user-icon');
+            const userDropdown = document.getElementById('user-dropdown');
+            const homeLink = document.getElementById('home-link');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            let searchTimeout;
+            let allItems = [];
+            let isDataLoaded = false;
+
+            if (userIcon && userDropdown) {
+                userIcon.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    userDropdown.classList.toggle('show');
+                });
             }
-        }
-        
-        // Función para abrir el menú desplegable
-        function openDropdown() {
-            userDropdown.classList.add('show');
-            dropdownOverlay.classList.add('show');
-        }
-        
-        // Función para cerrar el menú desplegable
-        function closeDropdown() {
-            userDropdown.classList.remove('show');
-            dropdownOverlay.classList.remove('show');
-        }
-        
-        // Función para obtener cookies (útil para CSRF token)
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
+            if (homeLink) {
+                homeLink.addEventListener('click', () => { window.location.href = "/"; });
+            }
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    if (confirm("¿Estás seguro de que quieres cerrar sesión?")) {
+                        window.location.href = "/admin/logout/"; 
+                    }
+                });
+            }
+            document.addEventListener('click', () => {
+                if (userDropdown && userDropdown.classList.contains('show')) {
+                    userDropdown.classList.remove('show');
+                }
+            });
+
+            if (toggleBtn && sidebar && mainContent) {
+                const updateSidebarState = () => {
+                    const isClosed = sidebar.classList.contains('closed');
+                    toggleBtn.innerHTML = isClosed ? '🔍' : '☰';
+                    if (!isClosed) {
+                        setTimeout(() => searchInput.focus(), 300);
+                    }
+                };
+                toggleBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('closed');
+                    sidebar.classList.toggle('open');
+                    mainContent.classList.toggle('sidebar-closed');
+                    mainContent.classList.toggle('sidebar-open');
+                    updateSidebarState();
+                });
+                updateSidebarState();
+            }
+
+            function normalizeText(text) {
+                if (!text) return '';
+                return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[.,;*+?^${}()|[\]\\]/g, ' ').replace(/\s+/g, ' ').trim();
+            }
+
+            function levenshteinDistance(a, b) {
+                const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+                for (let i = 0; i <= a.length; i += 1) { matrix[0][i] = i; }
+                for (let j = 0; j <= b.length; j += 1) { matrix[j][0] = j; }
+                for (let j = 1; j <= b.length; j += 1) {
+                    for (let i = 1; i <= a.length; i += 1) {
+                        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                        matrix[j][i] = Math.min(matrix[j][i - 1] + 1, matrix[j - 1][i] + 1, matrix[j - 1][i - 1] + cost);
                     }
                 }
+                return matrix[b.length][a.length];
             }
-            return cookieValue;
-        }
-        
-        // Función para limpiar datos de sesión del navegador
-        function clearBrowserSession() {
-            // Limpiar datos de sesión específicos de la aplicación
-            try {
-                // Limpiar cookies relacionadas con la sesión
-                const cookies = document.cookie.split(";");
-                for (let cookie of cookies) {
-                    const eqPos = cookie.indexOf("=");
-                    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-                    
-                    // Limpiar cookies comunes de sesión
-                    if (name.includes('session') || name.includes('csrf') || name.includes('auth')) {
-                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+
+            const loadTableData = () => {
+                if (isDataLoaded) return;
+                allItems = [];
+                
+                document.querySelectorAll('.partida-row, .titulo-row, .subpartida-row').forEach(row => {
+                    const codigo = row.dataset.codigo;
+                    const desc = row.dataset.descripcion;
+
+                    if (codigo && desc) {
+                        let type = 'Subpartida';
+                        if (row.classList.contains('partida-row')) type = 'Partida';
+                        if (row.classList.contains('titulo-row')) type = 'Título';
+                        
+                        const normalizedDesc = normalizeText(desc);
+                        allItems.push({ codigo, desc, normalizedDesc, type, element: row });
                     }
-                }
-                
-                // Limpiar datos específicos del usuario si existen
-                if (window.localStorage) {
-                    const keysToRemove = [];
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const key = localStorage.key(i);
-                        if (key && (key.includes('user') || key.includes('session') || key.includes('auth'))) {
-                            keysToRemove.push(key);
-                        }
-                    }
-                    keysToRemove.forEach(key => localStorage.removeItem(key));
-                }
-                
-                if (window.sessionStorage) {
-                    sessionStorage.clear();
-                }
-            } catch (error) {
-                console.warn('No se pudieron limpiar todos los datos de sesión:', error);
-            }
-        }
-        
-        // Función para realizar logout
-        async function performLogout() {
-            try {
-                // Mostrar indicador de carga
-                logoutBtn.classList.add('loading');
-                logoutBtn.querySelector('span:last-child').textContent = 'Cerrando sesión';
-                
-                // Opción 1: Si tienes un endpoint de logout en Django
-                const csrfToken = getCookie('csrftoken');
-                
-                const response = await fetch('/logout/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                    },
-                    credentials: 'same-origin'
                 });
                 
-                if (response.ok) {
-                    // Logout exitoso en el servidor
-                    clearBrowserSession();
-                    
-                    // Redirigir a la página de login
-                    window.location.href = '/';
-                } else {
-                    throw new Error('Error en el servidor');
+                isDataLoaded = true;
+                console.log(`Buscador listo. Se cargaron ${allItems.length} items para la búsqueda.`);
+            };
+            
+            const performSearch = (query) => {
+                if (!query || query.trim().length < 3) {
+                    suggestions.classList.remove('show');
+                    return;
                 }
-                
-            } catch (error) {
-                console.error('Error durante el logout:', error);
-                
-                // Fallback: limpiar sesión local y redirigir
-                clearBrowserSession();
-                
-                // Mostrar mensaje de advertencia
-                alert('Se ha cerrado la sesión localmente. Por seguridad, cierre completamente el navegador.');
-                
-                // Redirigir a la página principal o login
-                window.location.href = '/';
-            }
-        }
-        
-        // Manejar el logout
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                performLogout();
-            }
-            closeDropdown();
-        });
-        
-        // Cerrar menú desplegable con Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeDropdown();
-            }
-        });
-        
-        // Funcionalidad de la barra lateral
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('main-content');
-        const toggleBtn = document.getElementById('toggle-btn');
-        
-        toggleBtn.addEventListener('click', function() {
-            if (sidebar.classList.contains('open')) {
-                sidebar.classList.remove('open');
-                sidebar.classList.add('closed');
-                mainContent.classList.remove('sidebar-open');
-                mainContent.classList.add('sidebar-closed');
-                toggleBtn.innerHTML = '🔍';
-            } else {
-                sidebar.classList.remove('closed');
-                sidebar.classList.add('open');
-                mainContent.classList.remove('sidebar-closed');
-                mainContent.classList.add('sidebar-open');
-                toggleBtn.innerHTML = '☰';
-                // Enfocar el campo de búsqueda cuando se abre
-                setTimeout(() => {
-                    document.getElementById('search').focus();
-                }, 300);
-            }
-        });
-        
-        // Función para validar los criterios de búsqueda
-        function validateSearchQuery(query) {
-            if (/^\d+$/.test(query)) {
-                return query.length >= 6;
-            }
-            
-            const words = query.trim().split(/\s+/);
-            return words.length >= 2 && words.every(word => word.length > 0);
-        }
-        
-        // Funcionalidad de búsqueda
-        document.getElementById('search').addEventListener('input', function() {
-            const query = this.value;
-            const suggestions = document.getElementById('suggestions');
 
-            if (validateSearchQuery(query)) {
-                fetch(`/arancel/search/?q=${query}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        suggestions.innerHTML = '';
-
-                        // Mostrar resultados agrupados por tipo
-                        const partidas = data.filter(item => item.type === 'partida');
-                        const subpartidas = data.filter(item => item.type === 'subpartida');
-
-                        if (partidas.length > 0) {
-                            const partidaHeader = document.createElement('li');
-                            partidaHeader.textContent = 'Partidas:';
-                            partidaHeader.style.fontWeight = 'bold';
-                            partidaHeader.style.backgroundColor = '#e9ecef';
-                            suggestions.appendChild(partidaHeader);
-
-                            partidas.forEach(item => {
-                                const li = document.createElement('li');
-                                li.textContent = `${item.codigo} - ${item.descripcion}`;
-                                li.dataset.targetId = 'partida-' + item.codigo;
-                                li.addEventListener('click', () => scrollToElement(li.dataset.targetId, item.codigo));
-                                suggestions.appendChild(li);
+                const isNumeric = /^\d+[\d.]*$/.test(query.trim());
+                let results;
+                
+                const normalizedQuery = normalizeText(query);
+                
+                if (isNumeric) {
+                    results = allItems.filter(item => !item.codigo.startsWith('_H_') && item.codigo.startsWith(query.trim()));
+                } else {
+                    const queryWords = normalizedQuery.split(' ');
+                    results = allItems.map(item => {
+                        let score = 0;
+                        const itemWords = item.normalizedDesc.split(' ');
+                        queryWords.forEach(queryWord => {
+                            let bestMatchScore = 0;
+                            itemWords.forEach(itemWord => {
+                                if (itemWord.startsWith(queryWord)) {
+                                    bestMatchScore = Math.max(bestMatchScore, 0.9);
+                                } else {
+                                    const distance = levenshteinDistance(queryWord, itemWord);
+                                    const similarity = 1 - (distance / Math.max(queryWord.length, itemWord.length));
+                                    if (similarity > 0.7) {
+                                        bestMatchScore = Math.max(bestMatchScore, similarity);
+                                    }
+                                }
                             });
-                        }
+                            score += bestMatchScore;
+                        });
+                        return { ...item, score };
+                    }).filter(item => item.score > 0).sort((a, b) => b.score - a.score);
+                }
+                showSuggestions(results.slice(0, 15));
+            };
 
-                        if (subpartidas.length > 0) {
-                            const subpartidaHeader = document.createElement('li');
-                            subpartidaHeader.textContent = 'Subpartidas:';
-                            subpartidaHeader.style.fontWeight = 'bold';
-                            subpartidaHeader.style.backgroundColor = '#e9ecef';
-                            suggestions.appendChild(subpartidaHeader);
-
-                            subpartidas.forEach(item => {
-                                const li = document.createElement('li');
-                                li.textContent = `${item.codigo} - ${item.descripcion}`;
-                                li.dataset.targetId = `subpartida-${item.codigo}`;
-                                li.addEventListener('click', () => scrollToElement(li.dataset.targetId, item.codigo));
-                                suggestions.appendChild(li);
-                            });
-                        }
-                        
-                        // Si no hay resultados, mostrar mensaje
-                        if (partidas.length === 0 && subpartidas.length === 0) {
-                            const noResultsLi = document.createElement('li');
-                            noResultsLi.textContent = 'No se encontraron resultados';
-                            noResultsLi.style.fontStyle = 'italic';
-                            noResultsLi.style.color = '#666';
-                            suggestions.appendChild(noResultsLi);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error en la búsqueda:', error);
-                        suggestions.innerHTML = '';
-                        const errorLi = document.createElement('li');
-                        errorLi.textContent = 'Error en la búsqueda';
-                        errorLi.style.color = '#dc3545';
-                        suggestions.appendChild(errorLi);
-                    });
-            } else {
+            const showSuggestions = (results) => {
                 suggestions.innerHTML = '';
-                
-                if (query.length > 0) {
-                    const helpLi = document.createElement('li');
-                    if (/^\d+$/.test(query)) {
-                        helpLi.textContent = 'El código debe tener al menos 6 dígitos';
-                    } else {
-                        helpLi.textContent = 'La descripción debe tener al menos 2 letras';
-                    }
-                    helpLi.style.fontStyle = 'italic';
-                    helpLi.style.color = '#6c757d';
-                    helpLi.style.pointerEvents = 'none';
-                    suggestions.appendChild(helpLi);
-                }
-            }
-        });
-        
-        function scrollToElement(targetId, codigo) {
-            const target = document.getElementById(targetId);
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                target.classList.add('highlight');
-                setTimeout(() => {
-                    target.classList.remove('highlight');
-                }, 2000);
-            }
-            document.getElementById('suggestions').innerHTML = '';
-            document.getElementById('search').value = codigo;
-        }
-        
-        // Manejar Enter en el buscador
-        document.getElementById('search').addEventListener('keydown', function(event) {
-            const suggestions = document.getElementById('suggestions');
-            if (event.key === 'Enter' && suggestions.firstChild) {
-                const firstSuggestion = suggestions.querySelector('li[data-target-id]');
-                if (firstSuggestion) {
-                    const targetId = firstSuggestion.dataset.targetId;
-                    const codigo = firstSuggestion.textContent.split(' - ')[0];
-                    scrollToElement(targetId, codigo);
-                }
-                event.preventDefault();
-            }
-        });
-        
-        // Detectar inactividad y hacer logout automático (opcional)
-        let inactivityTimer;
-        const INACTIVITY_TIME = 30 * 60 * 1000; // 30 minutos
-        
-        function resetInactivityTimer() {
-            clearTimeout(inactivityTimer);
-            inactivityTimer = setTimeout(() => {
-                if (confirm('Tu sesión ha expirado por inactividad. ¿Deseas continuar?')) {
-                    resetInactivityTimer();
+                if (results.length === 0) {
+                    suggestions.innerHTML = '<li class="no-results">No se encontraron resultados</li>';
                 } else {
-                    performLogout();
+                    results.forEach(item => {
+                        const li = document.createElement('li');
+                        let tagColor = '#28a745'; // Subpartida (verde)
+                        if (item.type === 'Partida') tagColor = '#007bff'; // Partida (azul)
+                        if (item.type === 'Título') tagColor = '#6c757d'; // Título (gris)
+
+                        const tagStyle = `background-color: ${tagColor}; color: white; font-size: 10px; padding: 2px 5px; border-radius: 4px; float: right; margin-left: 8px;`;
+                        
+                        const codigoDisplay = item.codigo.startsWith('_H_') ? '' : `<strong>${item.codigo}</strong>`;
+
+                        li.innerHTML = `
+                            <div>
+                                <span style="${tagStyle}">${item.type}</span>
+                                ${codigoDisplay}
+                            </div>
+                            <small style="color: #666; display: block; margin-top: 4px;">${item.desc.substring(0,60)}...</small>
+                        `;
+                        li.addEventListener('click', () => scrollToElement(item.element));
+                        suggestions.appendChild(li);
+                    });
                 }
-            }, INACTIVITY_TIME);
-        }
-        
-        // Eventos que resetean el timer de inactividad
-        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
-            document.addEventListener(event, resetInactivityTimer, true);
+                suggestions.classList.add('show');
+            };
+
+            const scrollToElement = (element) => {
+                if (!element) return;
+                document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.classList.add('highlight');
+                setTimeout(() => element.classList.remove('highlight'), 4000);
+                searchInput.value = '';
+                suggestions.classList.remove('show');
+            };
+            
+            if (searchInput) {
+                setTimeout(loadTableData, 1000); 
+
+                searchInput.addEventListener('input', (e) => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => performSearch(e.target.value), 350);
+                });
+
+                searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const firstResult = suggestions.querySelector('li:not(.no-results)');
+                        if (firstResult) {
+                            firstResult.click();
+                        }
+                    }
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#search-container')) {
+                        suggestions.classList.remove('show');
+                    }
+                });
+            }
         });
-        
-        // Inicializar timer de inactividad
-        resetInactivityTimer();
     </script>
 </body>
 </html>
