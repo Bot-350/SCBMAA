@@ -358,10 +358,10 @@
                 
                 // Verificar longitud mínima según el tipo de búsqueda
                 if (isNumeric) {
-                    // Para códigos: mínimo 6 caracteres sin contar puntos
+                    // Para códigos: mínimo 4 caracteres sin contar puntos
                     const codeWithoutDots = trimmedQuery.replace(/\./g, '');
-                    if (codeWithoutDots.length < 6) {
-                        suggestions.innerHTML = '<li class="no-results">Ingrese al menos 6 números para buscar por código</li>';
+                    if (codeWithoutDots.length < 4) {
+                        suggestions.innerHTML = '<li class="no-results">Ingrese al menos 4 números para buscar por código</li>';
                         suggestions.classList.add('show');
                         return;
                     }
