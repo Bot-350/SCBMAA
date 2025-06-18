@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="h4 mb-0">Historial de Búsquedas</h3>
+                <div>
+                    <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-home"></i> Inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if logs %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Búsqueda</th>
+                                <th class="text-end">Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">{{ log.user.username }}</span>
+                                </td>
+                                <td>{{ log.term }}</td>
+                                <td class="text-end">
+                                    <small class="text-muted">
+                                        {{ log.timestamp|date:"Y-m-d H:i:s" }}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No hay registros de búsqueda para mostrar.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+    .table th {
+        background-color: #f8f9fa;
+        border-top: none;
+    }
+    .table td {
+        vertical-align: middle;
+    }
+    .badge {
+        font-weight: normal;
+    }
+</style>
+{% endblock %}

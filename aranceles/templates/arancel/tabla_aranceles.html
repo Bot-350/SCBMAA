@@ -424,7 +424,11 @@
                             </div>
                             <small style="color: #666; display: block; margin-top: 4px;">${item.desc.substring(0,60)}...</small>
                         `;
-                        li.addEventListener('click', () => scrollToElement(item.element));
+                        li.addEventListener('click', () => {
+                            scrollToElement(item.element);
+                            // Log the search when clicking a result
+                            logSearch(item.codigo + ' - ' + item.desc.substring(0,60));
+                        });
                         suggestions.appendChild(li);
                     });
                 }
@@ -439,6 +443,44 @@
                 setTimeout(() => element.classList.remove('highlight'), 4000);
             };
             
+            // Función para obtener el CSRF token
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            // Función para registrar la búsqueda
+            async function logSearch(term) {
+                try {
+                    const formData = new FormData();
+                    formData.append('term', term);
+                    
+                    const response = await fetch('{% url "usuarios:save_search" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        console.warn('No se pudo registrar la búsqueda');
+                    }
+                } catch (error) {
+                    console.error('Error al registrar la búsqueda:', error);
+                }
+            }
+
             if (searchInput) {
                 setTimeout(loadTableData, 1000); 
 

@@ -7,6 +7,10 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models import Count
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from datetime import datetime, timedelta
 
 from .models import SearchLog # Assuming SearchLog is in usuarios/models.py
 
@@ -97,3 +101,67 @@ def search_logs_dashboard_view(request):
         'page_title': 'Dashboard de Búsquedas' # Added for clarity in template
     }
     return render(request, 'usuarios/search_logs_page.html', context)
+
+@login_required
+@require_POST
+@csrf_protect
+def log_search_term(request):
+    term = request.POST.get('term', '').strip()
+    if term:
+        SearchLog.objects.create(user=request.user, term=term)
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error', 'message': 'No term provided'}, status=400)
+
+@login_required
+@require_POST
+def save_search(request):
+    """Vista para guardar una búsqueda via AJAX"""
+    term = request.POST.get('term', '').strip()
+    if term:
+        SearchLog.objects.create(
+            user=request.user,
+            term=term
+        )
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error', 'message': 'Término vacío'})
+
+@login_required
+def view_search_logs(request):
+    """Vista para ver el historial de búsquedas"""
+    try:
+        # Intentar crear un registro de prueba si no hay ninguno
+        if SearchLog.objects.count() == 0:
+            SearchLog.objects.create(
+                user=request.user,
+                term="búsqueda de prueba",
+                timestamp=timezone.now()
+            )
+        
+        # Obtener todos los logs
+        logs = SearchLog.objects.select_related('user').order_by('-timestamp')
+        
+        # Imprimir información de depuración
+        print(f"Total de logs: {logs.count()}")
+        for log in logs:
+            print(f"Log: Usuario={log.user.username}, Término={log.term}, Fecha={log.timestamp}")
+        
+        context = {
+            'logs': logs,
+            'debug_info': {
+                'total_logs': logs.count(),
+                'request_user': request.user.username,
+            }
+        }
+        return render(request, 'usuarios/search_logs.html', context)
+    except Exception as e:
+        import traceback
+        print(f"Error en view_search_logs: {str(e)}")
+        print(traceback.format_exc())
+        context = {
+            'error': str(e),
+            'logs': [],
+            'debug_info': {
+                'error_details': traceback.format_exc()
+            }
+        }
+        return render(request, 'usuarios/search_logs.html', context)
