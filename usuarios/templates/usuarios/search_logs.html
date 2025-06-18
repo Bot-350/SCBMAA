@@ -1,70 +1,149 @@
 {% extends 'base.html' %}
 {% load tz %}
 
+{% block navbar %}{% endblock %}
+
 {% block content %}
+<style>
+    :root {
+        --primary-dark: #2c3e50;
+        --primary-darker: #1a252f;
+        --shadow-heavy: rgba(44, 62, 80, 0.3);
+    }
+    #top-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 70px;
+        background: linear-gradient(90deg, var(--primary-darker) 0%, var(--primary-dark) 100%);
+        z-index: 1001;
+        display: flex;
+        align-items: center;
+        padding: 0 30px;
+        box-shadow: 0 4px 20px var(--shadow-heavy);
+        backdrop-filter: blur(10px);
+    }
+    #top-bar h1 {
+        color: #fff;
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        cursor: pointer;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px var(--shadow-heavy);
+        transition: opacity 0.3s ease;
+        text-decoration: none;
+    }
+    #user-container { margin-left: auto; position: relative; }
+    #user-icon { color: white; font-size: 24px; cursor: pointer; padding: 8px; border-radius: 50%; transition: background-color 0.3s ease; display: flex; align-items: center; justify-content: center; filter: brightness(0) invert(1); }
+    #user-icon:hover { background-color: rgba(255,255,255,0.1); }
+    #user-dropdown { position: absolute; top: calc(100% + 5px); right: 0; background-color: white; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 150px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; z-index: 1002; }
+    #user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+    #user-dropdown::before { content: ''; position: absolute; top: -8px; right: 12px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid white; }
+    .dropdown-item { padding: 12px 16px; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #eee; display: flex; align-items: center; color: #333; text-decoration: none; }
+    .dropdown-item:last-child { border-bottom: none; }
+    .dropdown-item:hover { background-color: #f8f9fa; }
+    .dropdown-item .icon { margin-right: 10px; font-size: 16px; }
+    .logout-item { color: #dc3545; }
+    .logout-item:hover { background-color: #fdf2f2; }
+    body { margin: 0; padding: 0; background-color: #f4f7f6; }
+    .container { margin-top: 90px !important; }
+</style>
+<div id="top-bar">
+    <h1 id="home-link" onclick="window.location.href='/'">SisArm</h1>
+    <div id="user-container">
+        <div id="user-icon">👤</div>
+        <div id="user-dropdown">
+            <a href="{% url 'usuarios:perfil' %}" class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></a>
+            {# Solo mostrar el enlace a logs si el usuario es admin #}
+            {% if request.user.is_staff or request.user.is_superuser %}
+            <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
+            {% endif %}
+            <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userIcon = document.getElementById('user-icon');
+        const userDropdown = document.getElementById('user-dropdown');
+        userIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+        });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#user-container')) {
+                userDropdown.classList.remove('show');
+            }
+        });
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function() {
+                window.location.href = "{% url 'usuarios:logout' %}";
+            });
+        }
+    });
+</script>
 <div class="container mt-4">
-    <div class="card shadow-sm">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h3 class="h4 mb-0">Historial de Búsquedas</h3>
-                <div>
-                    <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-home"></i> Inicio
-                    </a>
-                </div>
-            </div>
-        </div>        <div class="card-body">
-            {% if error %}
-                <div class="alert alert-danger">
-                    <h4 class="alert-heading">Error:</h4>
-                    <p>{{ error }}</p>
-                    {% if debug_info.error_details %}
-                        <hr>
-                        <pre class="mb-0"><code>{{ debug_info.error_details }}</code></pre>
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="mb-4 text-center">Historial de Búsquedas</h2>
+                    {% if error %}
+                        <div class="alert alert-danger">
+                            <h4 class="alert-heading">Error:</h4>
+                            <p>{{ error }}</p>
+                            {% if debug_info.error_details %}
+                                <hr>
+                                <pre class="mb-0"><code>{{ debug_info.error_details }}</code></pre>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    {% if debug_info %}
+                        <div class="alert alert-info mb-3">
+                            <strong>Información de depuración:</strong><br>
+                            Total de registros: {{ debug_info.total_logs }}<br>
+                            Usuario actual: {{ debug_info.request_user }}
+                        </div>
+                    {% endif %}
+
+                    {% if logs %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Búsqueda</th>
+                                        <th class="text-end">Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-primary">{{ log.user.username }}</span>
+                                        </td>
+                                        <td>{{ log.term }}</td>
+                                        <td class="text-end">
+                                            <small class="text-muted">
+                                                {{ log.timestamp|localtime|date:"Y-m-d H:i:s" }}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning text-center">
+                            <i class="fas fa-info-circle"></i> No hay registros de búsqueda para mostrar.
+                        </div>
                     {% endif %}
                 </div>
-            {% endif %}
-
-            {% if debug_info %}
-                <div class="alert alert-info mb-3">
-                    <strong>Información de depuración:</strong><br>
-                    Total de registros: {{ debug_info.total_logs }}<br>
-                    Usuario actual: {{ debug_info.request_user }}
-                </div>
-            {% endif %}
-
-            {% if logs %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Usuario</th>
-                                <th>Búsqueda</th>
-                                <th class="text-end">Fecha</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for log in logs %}
-                            <tr>
-                                <td>
-                                    <span class="badge bg-primary">{{ log.user.username }}</span>
-                                </td>
-                                <td>{{ log.term }}</td>
-                                <td class="text-end">
-                                    <small class="text-muted">
-                                        {{ log.timestamp|localtime|date:"Y-m-d H:i:s" }}
-                                    </small>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="alert alert-warning">
-                    <i class="fas fa-info-circle"></i> No hay registros de búsqueda para mostrar.
-                </div>
-            {% endif %}
+            </div>
         </div>
     </div>
 </div>

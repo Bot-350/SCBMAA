@@ -411,6 +411,9 @@
                     <span class="icon">⚙️</span>
                     <span>Configuración</span>
                 </div>
+                {% if request.user.is_staff or request.user.is_superuser %}
+                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
+                {% endif %}
                 <div class="dropdown-item logout-item" id="logout-btn">
                     <span class="icon">🚪</span>
                     <span>Cerrar Sesión</span>

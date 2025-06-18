@@ -110,6 +110,9 @@
             <div id="user-icon">👤</div>
             <div id="user-dropdown">
                 <a href="{% url 'usuarios:perfil' %}" class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></a>
+                {% if request.user.is_staff or request.user.is_superuser %}
+                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
+                {% endif %}
                 <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
             </div>
         </div>
