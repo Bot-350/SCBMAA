@@ -131,24 +131,30 @@ def save_search(request):
 def view_search_logs(request):
     """Vista para ver el historial de búsquedas"""
     try:
-        # Intentar crear un registro de prueba si no hay ninguno
-        if SearchLog.objects.count() == 0:
-            SearchLog.objects.create(
-                user=request.user,
-                term="búsqueda de prueba",
-                timestamp=timezone.now()
-            )
-        
-        # Obtener todos los logs
+        # Obtener todos los usuarios que tienen logs
+        user_ids = SearchLog.objects.values_list('user', flat=True).distinct()
+        users_list = User.objects.filter(id__in=user_ids).order_by('username')
+
+        selected_user_id = request.GET.get('user_id')
+        selected_user_logs = None
+        selected_user_instance = None
+
+        if selected_user_id:
+            try:
+                selected_user_id = int(selected_user_id)
+                selected_user_instance = User.objects.get(id=selected_user_id)
+                selected_user_logs = SearchLog.objects.filter(user_id=selected_user_id).order_by('-timestamp')
+            except (ValueError, User.DoesNotExist):
+                selected_user_id = None
+
         logs = SearchLog.objects.select_related('user').order_by('-timestamp')
-        
-        # Imprimir información de depuración
-        print(f"Total de logs: {logs.count()}")
-        for log in logs:
-            print(f"Log: Usuario={log.user.username}, Término={log.term}, Fecha={log.timestamp}")
-        
+
         context = {
             'logs': logs,
+            'users_list': users_list,
+            'selected_user_logs': selected_user_logs,
+            'selected_user_instance': selected_user_instance,
+            'selected_user_id': selected_user_id,
             'debug_info': {
                 'total_logs': logs.count(),
                 'request_user': request.user.username,
@@ -157,11 +163,13 @@ def view_search_logs(request):
         return render(request, 'usuarios/search_logs.html', context)
     except Exception as e:
         import traceback
-        print(f"Error en view_search_logs: {str(e)}")
-        print(traceback.format_exc())
         context = {
             'error': str(e),
             'logs': [],
+            'users_list': [],
+            'selected_user_logs': None,
+            'selected_user_instance': None,
+            'selected_user_id': None,
             'debug_info': {
                 'error_details': traceback.format_exc()
             }
