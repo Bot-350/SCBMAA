@@ -88,8 +88,15 @@
         th, td { border: 1px solid #bdc3c7; padding: 10px 8px; text-align: center; vertical-align: middle; }
         th { background-color: #2c3e50; color: white; font-weight: bold; text-transform: uppercase; font-size: 12px; }
         .text-left { text-align: left; }
-        .highlight { background-color: #ffeb3b !important; transition: background-color 3s ease-out; }
-        .highlight td { background-color: #ffeb3b !important; }
+        .highlight, .highlight td {
+            background-color: #ffeb3b !important;
+            animation: blink-highlight 0.35s steps(1, end) 8;
+        }
+        @keyframes blink-highlight {
+            0%   { background-color: #ffeb3b; }
+            50%  { background-color: #fffde7; }
+            100% { background-color: #ffeb3b; }
+        }
         .partida-row td { background-color: #3498db; color: white; font-weight: bold; border-top: 2px solid #5f81a3 !important; }
         .titulo-row td { background-color: #aed6f1; color: #307097; font-style: italic; }
         .subpartida-descripcion { padding-left: 30px !important; }
@@ -380,27 +387,53 @@
                 if (isNumeric) {
                     results = allItems.filter(item => !item.codigo.startsWith('_H_') && item.codigo.startsWith(query.trim()));
                 } else {
-                    const queryWords = normalizedQuery.split(' ');
-                    results = allItems.map(item => {
-                        let score = 0;
-                        const itemWords = item.normalizedDesc.split(' ');
-                        queryWords.forEach(queryWord => {
-                            let bestMatchScore = 0;
-                            itemWords.forEach(itemWord => {
-                                if (itemWord.startsWith(queryWord)) {
-                                    bestMatchScore = Math.max(bestMatchScore, 0.9);
-                                } else {
+                    const queryWords = normalizedQuery.split(' ').filter(Boolean);
+                    // Si la búsqueda es de varias palabras, buscar la frase exacta en la descripción
+                    if (queryWords.length > 1) {
+                        // Buscar la frase completa (en orden y consecutiva)
+                        results = allItems.map(item => {
+                            // Buscar la frase exacta en la descripción normalizada
+                            const idx = item.normalizedDesc.indexOf(normalizedQuery);
+                            if (idx !== -1) {
+                                // Score más alto si la frase está al inicio
+                                const score = idx === 0 ? 2 : 1;
+                                return { ...item, score };
+                            }
+                            // Si no está la frase exacta, no mostrar el resultado
+                            return null;
+                        }).filter(item => item).sort((a, b) => b.score - a.score);
+                    } else {
+                        // Búsqueda de una sola palabra, mantener lógica de similitud
+                        results = allItems.map(item => {
+                            let score = 0;
+                            const itemWords = item.normalizedDesc.split(' ');
+                            let allWordsPresent = queryWords.every(queryWord => {
+                                return itemWords.some(itemWord => {
+                                    if (itemWord.startsWith(queryWord)) return true;
                                     const distance = levenshteinDistance(queryWord, itemWord);
                                     const similarity = 1 - (distance / Math.max(queryWord.length, itemWord.length));
-                                    if (similarity > 0.7) {
-                                        bestMatchScore = Math.max(bestMatchScore, similarity);
-                                    }
-                                }
+                                    return similarity > 0.7;
+                                });
                             });
-                            score += bestMatchScore;
-                        });
-                        return { ...item, score };
-                    }).filter(item => item.score > 0).sort((a, b) => b.score - a.score);
+                            if (!allWordsPresent) return null;
+                            queryWords.forEach(queryWord => {
+                                let bestMatchScore = 0;
+                                itemWords.forEach(itemWord => {
+                                    if (itemWord.startsWith(queryWord)) {
+                                        bestMatchScore = Math.max(bestMatchScore, 0.9);
+                                    } else {
+                                        const distance = levenshteinDistance(queryWord, itemWord);
+                                        const similarity = 1 - (distance / Math.max(queryWord.length, itemWord.length));
+                                        if (similarity > 0.7) {
+                                            bestMatchScore = Math.max(bestMatchScore, similarity);
+                                        }
+                                    }
+                                });
+                                score += bestMatchScore;
+                            });
+                            return { ...item, score };
+                        }).filter(item => item && item.score > 0).sort((a, b) => b.score - a.score);
+                    }
                 }
                 showSuggestions(results.slice(0, 15));
             };
@@ -438,12 +471,20 @@
                 suggestions.classList.add('show');
             };
 
+            let highlightTimeout;
             const scrollToElement = (element) => {
                 if (!element) return;
                 document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                element.classList.add('highlight');
-                setTimeout(() => element.classList.remove('highlight'), 4000);
+                // Limpiar timeout anterior si existe
+                if (highlightTimeout) clearTimeout(highlightTimeout);
+                element.classList.remove('highlight');
+                // Forzar reflow después de quitar la clase
+                void element.offsetWidth;
+                setTimeout(() => {
+                    element.classList.add('highlight');
+                    highlightTimeout = setTimeout(() => element.classList.remove('highlight'), 2800);
+                }, 10);
             };
             
             // Función para obtener el CSRF token
@@ -501,12 +542,12 @@
                         }
                     }
                 });
-
-                document.addEventListener('click', (e) => {
-                    if (!e.target.closest('#search-container')) {
-                        suggestions.classList.remove('show');
-                    }
-                });
+                // Eliminar el evento global que cierra sugerencias al hacer click fuera
+                //document.addEventListener('click', (e) => {
+                //    if (!e.target.closest('#search-container')) {
+                //        suggestions.classList.remove('show');
+                //    }
+                //});
             }
             if (clearSearchBtn && searchInput) {
                 clearSearchBtn.addEventListener('click', function() {
@@ -518,6 +559,10 @@
                 searchInput.addEventListener('input', function() {
                     clearSearchBtn.style.display = searchInput.value.length > 0 ? 'block' : 'none';
                 });
+                // Asegurar que la X esté visible si hay texto al cargar
+                if (searchInput.value.length > 0) {
+                    clearSearchBtn.style.display = 'block';
+                }
             }
         });
     </script>
