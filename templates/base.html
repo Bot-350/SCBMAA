@@ -38,17 +38,23 @@
     {% endblock %}
 
     {% if messages %}
-    <div class="container mt-3">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-            {{ message }}
-        </div>
-        {% endfor %}
-    </div>
+      {% for message in messages %}
+        <script>
+          alert("{{ message }}");
+        </script>
+      {% endfor %}
     {% endif %}
 
     {% block content %}
     {% endblock %}
+
+    {% if not request.user.is_authenticated %}
+    <script>
+        if (confirm("La sesión se ha cerrado. ¿Desea salir?")) {
+            window.location.href = "/logout/";
+        }
+    </script>
+    {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -349,97 +349,6 @@
             }
         }
         
-        /* Efectos de partículas de fondo mejorados */
-        .background-decoration {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
-            overflow: hidden;
-        }
-        
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            animation: float 8s ease-in-out infinite;
-        }
-        
-        .particle:nth-child(1) {
-            width: 24px;
-            height: 24px;
-            top: 15%;
-            left: 10%;
-            background: rgba(52, 152, 219, 0.3);
-            animation-delay: 0s;
-        }
-        
-        .particle:nth-child(2) {
-            width: 18px;
-            height: 18px;
-            top: 45%;
-            left: 85%;
-            background: rgba(26, 188, 156, 0.4);
-            animation-delay: 2s;
-        }
-        
-        .particle:nth-child(3) {
-            width: 30px;
-            height: 30px;
-            top: 75%;
-            left: 15%;
-            background: rgba(230, 126, 34, 0.3);
-            animation-delay: 4s;
-        }
-        
-        .particle:nth-child(4) {
-            width: 22px;
-            height: 22px;
-            top: 25%;
-            left: 75%;
-            background: rgba(231, 76, 60, 0.3);
-            animation-delay: 1s;
-        }
-        
-        .particle:nth-child(5) {
-            width: 16px;
-            height: 16px;
-            top: 65%;
-            left: 65%;
-            background: rgba(39, 174, 96, 0.4);
-            animation-delay: 3s;
-        }
-        
-        .particle:nth-child(6) {
-            width: 20px;
-            height: 20px;
-            top: 85%;
-            left: 45%;
-            background: rgba(155, 89, 182, 0.3);
-            animation-delay: 5s;
-        }
-        
-        @keyframes float {
-            0%, 100% {
-                transform: translateY(0px) rotate(0deg) scale(1);
-                opacity: 0.6;
-            }
-            25% {
-                transform: translateY(-15px) rotate(90deg) scale(1.1);
-                opacity: 0.8;
-            }
-            50% {
-                transform: translateY(-25px) rotate(180deg) scale(1);
-                opacity: 1;
-            }
-            75% {
-                transform: translateY(-15px) rotate(270deg) scale(0.9);
-                opacity: 0.8;
-            }
-        }
-        
         /* Elementos decorativos adicionales */
         .geometric-shapes {
             position: fixed;
@@ -578,27 +487,12 @@
         </div>
     </div>
 
-    <!-- Decoración de fondo -->
-    <div class="background-decoration">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-    </div>
-
-    <!-- Formas geométricas decorativas -->
-    <div class="geometric-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-    </div>
-
     <!-- Contenido principal -->
     <div class="main-container">
         <div class="welcome-section">
             <h2>Bienvenido a <span class="highlight">SCBMAA</span></h2>
-            <p>Sistema integral de consulta arancelaria y clasificación de mercancías. Accede a toda la información que necesitas de manera rápida y eficiente.</p>
+            <p>Sistema de Clasificación y Búsqueda de Mercancías y Aranceles. 
+                Accede a toda la información que necesitas de manera rápida y eficiente.</p>
         </div>
 
         <div class="buttons-container">
@@ -607,17 +501,27 @@
                 Arancel de Aduanas
             </button>
             
-            <button class="main-button button-referencias" onclick="goToReferencias()">
+            <button class="main-button button-referencias" onclick="showNotImplemented()">
                 <i>🔍</i>
                 Referencias de Clasificación
             </button>
             
-            <button class="main-button button-notas" onclick="goToNotas()">
+            <button class="main-button button-notas" onclick="showNotImplemented()">
                 <i>📝</i>
                 Notas Explicativas
             </button>
         </div>
     </div>
+
+    {% if request.user.is_authenticated and messages %}
+      {% for message in messages %}
+        {% if "correctamente" not in message|stringformat:"s"|lower %}
+          <script>
+            alert("{{ message }}");
+          </script>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
 
     <script>
         // Funcionalidad del menú desplegable del usuario
@@ -691,10 +595,11 @@
         function clearBrowserSession() {
             try {
                 const cookies = document.cookie.split(";");
+
                 for (let cookie of cookies) {
                     const eqPos = cookie.indexOf("=");
                     const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-                    
+
                     if (name.includes('session') || name.includes('csrf') || name.includes('auth')) {
                         document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
                         document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
@@ -720,42 +625,14 @@
             }
         }
         
-        // Función para realizar logout
-        async function performLogout() {
-            try {
-                logoutBtn.classList.add('loading');
-                logoutBtn.querySelector('span:last-child').textContent = 'Cerrando sesión';
-                
-                const csrfToken = getCookie('csrftoken');
-                
-                const response = await fetch('/logout/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                    },
-                    credentials: 'same-origin'
-                });
-                
-                if (response.ok) {
-                    clearBrowserSession();
-                    window.location.href = '/';
-                } else {
-                    throw new Error('Error en el servidor');
-                }
-                
-            } catch (error) {
-                console.error('Error durante el logout:', error);
-                clearBrowserSession();
-                alert('Se ha cerrado la sesión localmente. Por seguridad, cierre completamente el navegador.');
-                window.location.href = '/';
-            }
+        // Función para realizar logout (redirige directamente)
+        function performLogout() {
+            window.location.href = '/logout/';
         }
-        
+
         // Manejar el logout
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            
             if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
                 performLogout();
             }
@@ -774,12 +651,8 @@
             window.location.href = "/aranceles/tabla/";
         }
 
-        function goToReferencias() {
-            console.log("Función no implementada aún");
-        }
-
-        function goToNotas() {
-            console.log("Función no implementada aún");
+        function showNotImplemented() {
+            alert("Función no implementada");
         }
 
         // Efectos adicionales al cargar la página
@@ -796,61 +669,6 @@
                 });
             });
         });
-
-        // Crear partículas dinámicas mejoradas
-        function createParticle() {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            
-            const colors = [
-                'rgba(52, 152, 219, 0.3)',
-                'rgba(26, 188, 156, 0.3)',
-                'rgba(230, 126, 34, 0.3)',
-                'rgba(231, 76, 60, 0.3)',
-                'rgba(39, 174, 96, 0.3)'
-            ];
-            
-            const size = Math.random() * 25 + 15;
-            particle.style.width = size + 'px';
-            particle.style.height = size + 'px';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.top = Math.random() * 100 + '%';
-            particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-            particle.style.animationDelay = Math.random() * 8 + 's';
-            particle.style.animationDuration = (Math.random() * 6 + 6) + 's';
-            
-            document.querySelector('.background-decoration').appendChild(particle);
-            
-            setTimeout(() => {
-                if (particle.parentNode) {
-                    particle.parentNode.removeChild(particle);
-                }
-            }, 12000);
-        }
-
-        // Crear partículas adicionales periódicamente
-        setInterval(createParticle, 4000);
-        
-        // Sistema de inactividad mejorado
-        let inactivityTimer;
-        const INACTIVITY_TIME = 30 * 60 * 1000; // 30 minutos
-        
-        function resetInactivityTimer() {
-            clearTimeout(inactivityTimer);
-            inactivityTimer = setTimeout(() => {
-                if (confirm('Tu sesión ha expirado por inactividad. ¿Deseas continuar?')) {
-                    resetInactivityTimer();
-                } else {
-                    performLogout();
-                }
-            }, INACTIVITY_TIME);
-        }
-        
-        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
-            document.addEventListener(event, resetInactivityTimer, true);
-        });
-        
-        resetInactivityTimer();
     </script>
 </body>
 </html>
