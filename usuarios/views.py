@@ -22,7 +22,6 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            messages.success(request, 'Has iniciado sesión correctamente.')
             # Redirige a la página que el usuario intentaba acceder o a home
             next_url = request.GET.get('next', 'home')
             return redirect(next_url)
@@ -139,15 +138,28 @@ def view_search_logs(request):
         selected_user_logs = None
         selected_user_instance = None
 
+        # Filtro por fecha
+        date_str = request.GET.get('date')
+        selected_date = None
+        logs = SearchLog.objects.select_related('user').order_by('-timestamp')
+
         if selected_user_id:
             try:
                 selected_user_id = int(selected_user_id)
                 selected_user_instance = User.objects.get(id=selected_user_id)
-                selected_user_logs = SearchLog.objects.filter(user_id=selected_user_id).order_by('-timestamp')
+                logs = logs.filter(user_id=selected_user_id)
+                selected_user_logs = logs  # Aplica ambos filtros si ambos están presentes
             except (ValueError, User.DoesNotExist):
                 selected_user_id = None
 
-        logs = SearchLog.objects.select_related('user').order_by('-timestamp')
+        if date_str:
+            try:
+                selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                logs = logs.filter(timestamp__date=selected_date)
+                if selected_user_logs is not None:
+                    selected_user_logs = selected_user_logs.filter(timestamp__date=selected_date)
+            except ValueError:
+                messages.error(request, "Fecha no válida. Formato esperado: AAAA-MM-DD.")
 
         context = {
             'logs': logs,
@@ -155,6 +167,7 @@ def view_search_logs(request):
             'selected_user_logs': selected_user_logs,
             'selected_user_instance': selected_user_instance,
             'selected_user_id': selected_user_id,
+            'selected_date': date_str,
             'debug_info': {
                 'total_logs': logs.count(),
                 'request_user': request.user.username,

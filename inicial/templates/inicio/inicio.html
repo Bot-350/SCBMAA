@@ -1,205 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SCBMAA - Sistema de Aranceles</title>
-    <style>
-        :root {
-            --primary-dark: #2c3e50;
-            --primary-darker: #1a252f;
-            --primary-medium: #34495e;
-            --primary-light: #5d6d7e;
-            --accent-blue: #3498db;
-            --accent-teal: #1abc9c;
-            --accent-orange: #e67e22;
-            --accent-red: #e74c3c;
-            --accent-green: #27ae60;
-            --neutral-light: #ecf0f1;
-            --neutral-medium: #bdc3c7;
-            --neutral-dark: #95a5a6;
-            --white: #ffffff;
-            --shadow-light: rgba(44, 62, 80, 0.1);
-            --shadow-medium: rgba(44, 62, 80, 0.2);
-            --shadow-heavy: rgba(44, 62, 80, 0.3);
-        }
+{% extends 'base.html' %}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 50%, var(--primary-light) 100%);
-            min-height: 100vh;
-            color: var(--primary-dark);
-        }
-        
-        /* Barra superior */
-        #top-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 70px;
-            background: linear-gradient(90deg, var(--primary-darker) 0%, var(--primary-dark) 100%);
-            z-index: 1001;
-            display: flex;
-            align-items: center;
-            padding: 0 30px;
-            box-shadow: 0 4px 20px var(--shadow-heavy);
-            backdrop-filter: blur(10px);
-        }
-        
-        #top-bar h1 {
-            color: var(--white);
-            margin: 0;
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-shadow: 2px 2px 4px var(--shadow-medium);
-        }
-        
-        /* Contenedor del usuario con menú desplegable */
-        #user-container {
-            margin-left: auto;
-            position: relative;
-        }
-        
-        #user-icon {
-            color: white;  /* Fuerza el color blanco */
-            font-size: 24px;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            transition: background-color 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            filter: brightness(0) invert(1);  /* Convierte el emoji a blanco */
-        }
-        
-        #user-icon:hover {
-            background: var(--accent-teal);
-            border-color: var(--white);
-            transform: scale(1.1);
-            box-shadow: 0 4px 15px var(--shadow-medium);
-        }
-        
-        /* Menú desplegable */
-        #user-dropdown {
-            position: absolute;
-            top: 120%;
-            right: 0;
-            background: var(--white);
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px var(--shadow-heavy);
-            min-width: 180px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-20px);
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            z-index: 1002;
-            overflow: hidden;
-        }
-        
-        #user-dropdown.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
-        #user-dropdown::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            right: 18px;
-            width: 0;
-            height: 0;
-            border-left: 10px solid transparent;
-            border-right: 10px solid transparent;
-            border-bottom: 10px solid var(--white);
-        }
-        
-        .dropdown-item {
-            padding: 16px 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            color: var(--primary-dark);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .dropdown-item:hover {
-            background: linear-gradient(90deg, var(--neutral-light) 0%, rgba(52, 152, 219, 0.1) 100%);
-            padding-left: 25px;
-        }
-        
-        .dropdown-item:active {
-            background: var(--accent-blue);
-            color: var(--white);
-        }
-        
-        .dropdown-item .icon {
-            margin-right: 12px;
-            font-size: 18px;
-            width: 20px;
-            text-align: center;
-        }
-        
-        .logout-item {
-            color: var(--accent-red);
-            border-top: 1px solid var(--neutral-light);
-        }
-        
-        .logout-item:hover {
-            background: linear-gradient(90deg, rgba(231, 76, 60, 0.1) 0%, rgba(231, 76, 60, 0.2) 100%);
-        }
-        
-        /* Indicador de carga para logout */
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-        
-        .loading::after {
-            content: '...';
-            animation: loading-dots 1.5s infinite;
-        }
-        
-        @keyframes loading-dots {
-            0%, 20% { opacity: 0; }
-            50% { opacity: 1; }
-            80%, 100% { opacity: 0; }
-        }
-        
-        /* Overlay para cerrar el menú desplegable */
-        #dropdown-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 999;
-            display: none;
-            background: rgba(0, 0, 0, 0.1);
-        }
-        
-        #dropdown-overlay.show {
-            display: block;
-        }
-        
-        /* Container principal */
-        .main-container {
-            margin-top: 70px;
-            min-height: calc(100vh - 70px);
+{% block title %}SCBMAA - Sistema de Aranceles{% endblock %}
+
+{% block extra_css %}
+        /* Estilos específicos para la página de inicio */
+        .home-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            min-height: calc(100vh - 90px);
             padding: 60px 20px;
         }
         
@@ -404,20 +214,9 @@
             }
         }
         
-        /* Responsive */
+        /* Responsive para página de inicio */
         @media (max-width: 768px) {
-            #top-bar {
-                height: 60px;
-                padding: 0 20px;
-            }
-            
-            #top-bar h1 {
-                font-size: 24px;
-            }
-            
-            .main-container {
-                margin-top: 60px;
-                min-height: calc(100vh - 60px);
+            .home-container {
                 padding: 40px 20px;
             }
             
@@ -460,35 +259,17 @@
                 margin-right: 15px;
             }
         }
-    </style>
-</head>
-<body>
-    <!-- Overlay para cerrar el menú -->
-    <div id="dropdown-overlay"></div>
+{% endblock %}
 
-    <!-- Barra superior -->
-    <div id="top-bar">
-        <h1>SCBMAA</h1>
-        <div id="user-container">
-            <div id="user-icon" style="color: white;">👤</div>
-            <div id="user-dropdown">
-                <div class="dropdown-item" id="config-btn">
-                    <span class="icon">⚙️</span>
-                    <span>Configuración</span>
-                </div>
-                {% if request.user.is_staff or request.user.is_superuser %}
-                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
-                {% endif %}
-                <div class="dropdown-item logout-item" id="logout-btn">
-                    <span class="icon">🚪</span>
-                    <span>Cerrar Sesión</span>
-                </div>
-            </div>
-        </div>
+{% block content %}
+    <!-- Elementos decorativos de fondo -->
+    <div class="geometric-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
     </div>
 
     <!-- Contenido principal -->
-    <div class="main-container">
+    <div class="home-container">
         <div class="welcome-section">
             <h2>Bienvenido a <span class="highlight">SCBMAA</span></h2>
             <p>Sistema de Clasificación y Búsqueda de Mercancías y Aranceles. 
@@ -496,7 +277,7 @@
         </div>
 
         <div class="buttons-container">
-            <button class="main-button button-arancel" onclick="goToArancel()">
+            <button class="main-button button-arancel" onclick="window.location.href='/aranceles/tabla/'; return false;">
                 <i>📊</i>
                 Arancel de Aduanas
             </button>
@@ -512,163 +293,33 @@
             </button>
         </div>
     </div>
+{% endblock %}
 
-    {% if request.user.is_authenticated and messages %}
-      {% for message in messages %}
-        {% if "correctamente" not in message|stringformat:"s"|lower %}
-          <script>
-            alert("{{ message }}");
-          </script>
-        {% endif %}
-      {% endfor %}
-    {% endif %}
+{% block extra_js %}
+<script>
+    // Funciones específicas de la página de inicio - deben estar disponibles globalmente
+    function goToArancel() {
+        window.location.href = "/aranceles/tabla/";
+    }
 
-    <script>
-        // Funcionalidad del menú desplegable del usuario
-        const userIcon = document.getElementById('user-icon');
-        const userDropdown = document.getElementById('user-dropdown');
-        const dropdownOverlay = document.getElementById('dropdown-overlay');
-        const logoutBtn = document.getElementById('logout-btn');
-        const configBtn = document.getElementById('config-btn');
-        
-        // Mostrar/ocultar menú desplegable
-        userIcon.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleDropdown();
-        });
-        
-        // Cerrar menú al hacer clic en el overlay
-        dropdownOverlay.addEventListener('click', function() {
-            closeDropdown();
-        });
-        
-        // Función para alternar el menú desplegable
-        function toggleDropdown() {
-            if (userDropdown.classList.contains('show')) {
-                closeDropdown();
-            } else {
-                openDropdown();
-            }
-        }
-        
-        // Función para abrir el menú desplegable
-        function openDropdown() {
-            userDropdown.classList.add('show');
-            dropdownOverlay.classList.add('show');
-        }
-        
-        // Función para cerrar el menú desplegable
-        function closeDropdown() {
-            userDropdown.classList.remove('show');
-            dropdownOverlay.classList.remove('show');
-        }
-        
-        // Función para ir a la página de perfil/configuración
-        function goToProfile() {
-            window.location.href = "/perfil";
-        }
-        
-        // Manejar el clic en configuración
-        configBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            closeDropdown();
-            goToProfile();
-        });
-        
-        // Función para obtener cookies (útil para CSRF token)
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=1')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-        
-        // Función para limpiar datos de sesión del navegador
-        function clearBrowserSession() {
-            try {
-                const cookies = document.cookie.split(";");
+    function showNotImplemented() {
+        alert("Función no implementada");
+    }
 
-                for (let cookie of cookies) {
-                    const eqPos = cookie.indexOf("=");
-                    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-
-                    if (name.includes('session') || name.includes('csrf') || name.includes('auth')) {
-                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
-                    }
-                }
-                
-                if (window.localStorage) {
-                    const keysToRemove = [];
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const key = localStorage.key(i);
-                        if (key && (key.includes('user') || key.includes('session') || key.includes('auth'))) {
-                            keysToRemove.push(key);
-                        }
-                    }
-                    keysToRemove.forEach(key => localStorage.removeItem(key));
-                }
-                
-                if (window.sessionStorage) {
-                    sessionStorage.clear();
-                }
-            } catch (error) {
-                console.warn('No se pudieron limpiar todos los datos de sesión:', error);
-            }
-        }
+    // Efectos adicionales al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        const buttons = document.querySelectorAll('.main-button');
         
-        // Función para realizar logout (redirige directamente)
-        function performLogout() {
-            window.location.href = '/logout/';
-        }
-
-        // Manejar el logout
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                performLogout();
-            }
-            closeDropdown();
-        });
-        
-        // Cerrar menú desplegable con Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeDropdown();
-            }
-        });
-
-        // Funciones de navegacion
-        function goToArancel() {
-            window.location.href = "/aranceles/tabla/";
-        }
-
-        function showNotImplemented() {
-            alert("Función no implementada");
-        }
-
-        // Efectos adicionales al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
-            const buttons = document.querySelectorAll('.main-button');
+        buttons.forEach(button => {
+            // Efectos hover
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+            });
             
-            buttons.forEach(button => {
-                button.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-8px) scale(1.02)';
-                });
-                
-                button.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0) scale(1)';
-                });
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
             });
         });
-    </script>
-</body>
-</html>
+    });
+</script>
+{% endblock %}

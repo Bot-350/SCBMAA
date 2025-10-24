@@ -3,59 +3,385 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Aranceles</title>
+    <title>{% block title %}SCBMAA - Sistema de Aranceles{% endblock %}</title>
+    
+    <!-- CSS Externos -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    
+    <!-- CSS Personalizado -->
+    <style>
+        :root {
+            --primary-dark: #2c3e50;
+            --primary-darker: #1a252f;
+            --primary-medium: #34495e;
+            --primary-light: #5d6d7e;
+            --accent-blue: #3498db;
+            --accent-teal: #1abc9c;
+            --accent-orange: #e67e22;
+            --accent-red: #e74c3c;
+            --accent-green: #27ae60;
+            --neutral-light: #ecf0f1;
+            --neutral-medium: #bdc3c7;
+            --neutral-dark: #95a5a6;
+            --white: #ffffff;
+            --shadow-light: rgba(44, 62, 80, 0.1);
+            --shadow-medium: rgba(44, 62, 80, 0.2);
+            --shadow-heavy: rgba(44, 62, 80, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 50%, var(--primary-light) 100%);
+            min-height: 100vh;
+            color: var(--primary-dark);
+        }
+
+        /* Barra superior común */
+        #top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: linear-gradient(90deg, var(--primary-darker) 0%, var(--primary-dark) 100%);
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            box-shadow: 0 4px 20px var(--shadow-heavy);
+            backdrop-filter: blur(10px);
+        }
+        
+        #top-bar h1 {
+            color: var(--white);
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px var(--shadow-medium);
+            transition: opacity 0.3s ease;
+            text-decoration: none;
+        }
+
+        #home-link {
+            color: #ffffff !important;
+        }
+
+        /* Contenedor del usuario con menú desplegable */
+        #user-container {
+            margin-left: auto;
+            position: relative;
+        }
+        
+        #user-icon {
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: brightness(0) invert(1);
+        }
+        
+        #user-icon:hover {
+            background: var(--accent-teal);
+            border-color: var(--white);
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px var(--shadow-medium);
+        }
+        
+        /* Menú desplegable */
+        #user-dropdown {
+            position: absolute;
+            top: 120%;
+            right: 0;
+            background: var(--white);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px var(--shadow-heavy);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-20px);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1002;
+            overflow: hidden;
+        }
+        
+        #user-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        #user-dropdown::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            right: 18px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid var(--white);
+        }
+        
+        .dropdown-item {
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            color: var(--primary-dark);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .dropdown-item:hover {
+            background: linear-gradient(90deg, var(--neutral-light) 0%, rgba(52, 152, 219, 0.1) 100%);
+            padding-left: 25px;
+        }
+        
+        .dropdown-item:active {
+            background: var(--accent-blue);
+            color: var(--white);
+        }
+        
+        .dropdown-item .icon {
+            margin-right: 12px;
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .logout-item {
+            color: var(--accent-red);
+            border-top: 1px solid var(--neutral-light);
+        }
+        
+        .logout-item:hover {
+            background: linear-gradient(90deg, rgba(231, 76, 60, 0.1) 0%, rgba(231, 76, 60, 0.2) 100%);
+        }
+
+        /* Overlay para cerrar el menú desplegable */
+        #dropdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+            display: none;
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        #dropdown-overlay.show {
+            display: block;
+        }
+
+        /* Contenido principal */
+        .main-container {
+            margin-top: 90px;
+            min-height: calc(100vh - 90px);
+            padding: 20px;
+        }
+
+        /* Mensajes */
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+            backdrop-filter: blur(10px);
+        }
+
+        .alert-success {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            border-left-color: #27ae60;
+        }
+
+        .alert-error {
+            background: rgba(231, 76, 60, 0.1);
+            color: #c0392b;
+            border-left-color: #c0392b;
+        }
+
+        .alert-warning {
+            background: rgba(230, 126, 34, 0.1);
+            color: #e67e22;
+            border-left-color: #e67e22;
+        }
+
+        .alert-info {
+            background: rgba(52, 152, 219, 0.1);
+            color: #3498db;
+            border-left-color: #3498db;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #top-bar {
+                height: 60px;
+                padding: 0 20px;
+            }
+            
+            #top-bar h1 {
+                font-size: 24px;
+            }
+            
+            .main-container {
+                margin-top: 70px;
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-container {
+                padding: 10px;
+            }
+        }
+
+        /* Estilos adicionales específicos del template */
+        {% block extra_css %}{% endblock %}
+    </style>
 </head>
 <body>
-    {% block navbar %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'aranceles:tabla_aranceles' %}">SCBMAA</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'usuarios:perfil' %}">Perfil</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'usuarios:search_logs' %}">Search Logs</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'usuarios:logout' %}">Cerrar sesión</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'usuarios:login' %}">Iniciar sesión</a>
-                        </li>
-                    {% endif %}
-                </ul>
+    <!-- Overlay para cerrar el menú -->
+    <div id="dropdown-overlay"></div>
+
+    <!-- Barra superior -->
+    <div id="top-bar">
+        <h1 id="home-link">SCBMAA</h1>
+        {% if user.is_authenticated %}
+        <div id="user-container">
+            <div id="user-icon">👤</div>
+            <div id="user-dropdown">
+                <a href="{% url 'usuarios:perfil' %}" class="dropdown-item">
+                    <span class="icon">⚙️</span>
+                    <span>Configuración</span>
+                </a>
+                {% if request.user.is_staff or request.user.is_superuser %}
+                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item">
+                    <span class="icon">📊</span>
+                    <span>Historial</span>
+                </a>
+                {% endif %}
+                <div class="dropdown-item logout-item" id="logout-btn">
+                    <span class="icon">🚪</span>
+                    <span>Cerrar Sesión</span>
+                </div>
             </div>
         </div>
-    </nav>
-    {% endblock %}
+        {% endif %}
+    </div>
 
-    {% if messages %}
-      {% for message in messages %}
-        <script>
-          alert("{{ message }}");
-        </script>
-      {% endfor %}
-    {% endif %}
+    <!-- Contenido principal -->
+    <div class="main-container">
+        <!-- Mensajes -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
-    {% block content %}
-    {% endblock %}
+        <!-- Contenido específico del template -->
+        {% block content %}
+        {% endblock %}
+    </div>
 
-    {% if not request.user.is_authenticated %}
+    <!-- JavaScript común -->
     <script>
-        if (confirm("La sesión se ha cerrado. ¿Desea salir?")) {
-            window.location.href = "/logout/";
-        }
-    </script>
-    {% endif %}
+        // Funcionalidad del menú desplegable del usuario
+        document.addEventListener('DOMContentLoaded', function() {
+            const userIcon = document.getElementById('user-icon');
+            const userDropdown = document.getElementById('user-dropdown');
+            const dropdownOverlay = document.getElementById('dropdown-overlay');
+            const logoutBtn = document.getElementById('logout-btn');
+            const homeLink = document.getElementById('home-link');
+            
+            if (userIcon && userDropdown) {
+                // Mostrar/ocultar menú desplegable
+                userIcon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleDropdown();
+                });
+                
+                // Cerrar menú al hacer clic en el overlay
+                dropdownOverlay.addEventListener('click', function() {
+                    closeDropdown();
+                });
+                
+                // Función para alternar el menú desplegable
+                function toggleDropdown() {
+                    if (userDropdown.classList.contains('show')) {
+                        closeDropdown();
+                    } else {
+                        openDropdown();
+                    }
+                }
+                
+                // Función para abrir el menú desplegable
+                function openDropdown() {
+                    userDropdown.classList.add('show');
+                    dropdownOverlay.classList.add('show');
+                }
+                
+                // Función para cerrar el menú desplegable
+                function closeDropdown() {
+                    userDropdown.classList.remove('show');
+                    dropdownOverlay.classList.remove('show');
+                }
+            }
 
+            if (homeLink) {
+                homeLink.addEventListener('click', () => {
+                    window.location.href = "/";
+                });
+            }
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                        window.location.href = "{% url 'usuarios:logout' %}";
+                    }
+                    closeDropdown();
+                });
+            }
+            
+            // Cerrar menú desplegable con Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeDropdown();
+                }
+            });
+        });
+    </script>
+
+    <!-- JavaScript externo -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- JavaScript específico del template -->
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
