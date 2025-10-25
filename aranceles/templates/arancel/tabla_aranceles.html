@@ -275,6 +275,58 @@
             let searchTimeout;
             let allItems = [];
             let isDataLoaded = false;
+            
+            // Búsquedas recientes
+            const recentKey = 'recent_searches';
+            const maxShow = 7;
+
+            // Recent searches (client-side) - show up to MAX_SHOW_RECENT when input focused and empty
+            const RECENT_STORAGE_KEY = 'scbmaa_recent_searches';
+            const MAX_SHOW_RECENT = 7;
+            const MAX_STORE_RECENT = 50;
+
+            function loadRecent() {
+                try { return JSON.parse(localStorage.getItem(RECENT_STORAGE_KEY) || '[]'); }
+                catch (e) { return []; }
+            }
+            function saveRecent(list) { localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(list)); }
+            function pushRecent(term) {
+                if (!term) return;
+                term = term.trim();
+                if (!term) return;
+                const list = loadRecent().filter(t => t !== term);
+                list.unshift(term);
+                if (list.length > MAX_STORE_RECENT) list.length = MAX_STORE_RECENT;
+                saveRecent(list);
+            }
+
+            function showRecent() {
+                const items = loadRecent();
+                suggestions.innerHTML = '';
+                if (!items || items.length === 0) {
+                    suggestions.innerHTML = '<li class="no-results">No hay búsquedas recientes</li>';
+                    suggestions.classList.add('show');
+                    return;
+                }
+                const list = items.slice(0, MAX_SHOW_RECENT);
+                list.forEach(term => {
+                    const li = document.createElement('li');
+                    li.className = 'recent-item';
+                    li.textContent = term;
+                    li.style.cursor = 'pointer';
+                    li.addEventListener('click', () => {
+                        searchInput.value = term;
+                        // move this term to top
+                        pushRecent(term);
+                        // trigger input event so existing logic runs
+                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        // optionally log to server as a search
+                        logSearch(term);
+                    });
+                    suggestions.appendChild(li);
+                });
+                suggestions.classList.add('show');
+            }
 
             if (userIcon && userDropdown) {
                 userIcon.addEventListener('click', function(event) {
@@ -462,8 +514,10 @@
                         `;
                         li.addEventListener('click', () => {
                             scrollToElement(item.element);
-                            // Log the search when clicking a result
-                            logSearch(item.codigo + ' - ' + item.desc.substring(0,60));
+                            // Guardar en recientes y registrar
+                            const term = item.codigo + ' - ' + item.desc.substring(0,60);
+                            saveRecent(term);
+                            logSearch(term);
                         });
                         suggestions.appendChild(li);
                     });
@@ -528,9 +582,78 @@
             if (searchInput) {
                 setTimeout(loadTableData, 1000); 
 
+                // When typing: if not empty, run existing search logic; if empty, show recent searches
+                // Guardar búsquedas recientes en localStorage
+                function saveRecent(term) {
+                    if(!term) return;
+                    let recent = JSON.parse(localStorage.getItem(recentKey) || '[]');
+                    recent = recent.filter(t => t !== term);
+                    recent.unshift(term);
+                    if(recent.length > 50) recent.length = 50; // Guardamos más pero mostramos solo 7
+                    localStorage.setItem(recentKey, JSON.stringify(recent));
+                }
+
+                // Mostrar búsquedas recientes
+                function showRecent() {
+                    const recent = JSON.parse(localStorage.getItem(recentKey) || '[]');
+                    if(!recent.length) return;
+                    suggestions.innerHTML = '';
+                    // Siempre mostrar los primeros 7 elementos disponibles
+                    const toShow = recent.slice(0, maxShow);
+                    toShow.forEach(term => {
+                        const li = document.createElement('li');
+                        li.style.display = 'flex';
+                        li.style.justifyContent = 'space-between';
+                        li.style.alignItems = 'center';
+                        
+                        const termSpan = document.createElement('span');
+                        termSpan.textContent = term;
+                        termSpan.style.flex = '1';
+                        termSpan.style.cursor = 'pointer';
+                        termSpan.addEventListener('click', () => {
+                            searchInput.value = term;
+                            searchInput.dispatchEvent(new Event('input'));
+                        });
+                        
+                        const deleteBtn = document.createElement('span');
+                        deleteBtn.textContent = '×';
+                        deleteBtn.style.cursor = 'pointer';
+                        deleteBtn.style.color = '#999';
+                        deleteBtn.style.fontSize = '18px';
+                        deleteBtn.style.marginLeft = '8px';
+                        deleteBtn.style.padding = '0 4px';
+                        deleteBtn.addEventListener('mouseenter', () => deleteBtn.style.color = '#333');
+                        deleteBtn.addEventListener('mouseleave', () => deleteBtn.style.color = '#999');
+                        deleteBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const items = JSON.parse(localStorage.getItem(recentKey) || '[]');
+                            const newItems = items.filter(t => t !== term);
+                            localStorage.setItem(recentKey, JSON.stringify(newItems));
+                            showRecent(); // Recargar la lista
+                        });
+                        
+                        li.appendChild(termSpan);
+                        li.appendChild(deleteBtn);
+                        suggestions.appendChild(li);
+                    });
+                    suggestions.classList.add('show');
+                }
+
                 searchInput.addEventListener('input', (e) => {
                     clearTimeout(searchTimeout);
+                    const value = e.target.value.trim();
+                    if(!value) {
+                        showRecent();
+                        return;
+                    }
                     searchTimeout = setTimeout(() => performSearch(e.target.value), 350);
+                });
+
+                // Show recent on focus if the input is empty
+                searchInput.addEventListener('focus', () => {
+                    if ((searchInput.value || '').trim() === '') {
+                        showRecent();
+                    }
                 });
 
                 searchInput.addEventListener('keydown', (e) => {
@@ -539,6 +662,13 @@
                         const firstResult = suggestions.querySelector('li:not(.no-results)');
                         if (firstResult) {
                             firstResult.click();
+                        } else {
+                            const q = (searchInput.value || '').trim();
+                            if (q) {
+                                // Save and log the manual search term
+                                try { pushRecent(q); } catch (err) {}
+                                logSearch(q);
+                            }
                         }
                     }
                 });
