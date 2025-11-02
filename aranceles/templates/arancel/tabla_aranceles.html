@@ -153,7 +153,7 @@
         th, td { border: 1px solid #bdc3c7; padding: 10px 8px; text-align: center; vertical-align: middle; }
         th { background-color: #2c3e50; color: white; font-weight: bold; text-transform: uppercase; font-size: 12px; }
         .text-left { text-align: left; }
-        .highlight, .highlight td {
+        .highlight, .highlight td, h3.highlight {
             background-color: #ffeb3b !important;
             animation: blink-highlight 0.35s steps(1, end) 8;
         }
@@ -366,50 +366,78 @@
             function showRecent() {
                 const searches = loadRecent();
                 suggestions.innerHTML = '<li style="padding: 8px 12px; font-size: 12px; color: #666; background: #f8f9fa; border-bottom: 1px solid #eee;">Búsquedas recientes</li>';
-                
+
                 if (searches.length > 0) {
-                    // Asegurar que la tabla ya esté cargada para poder mapear códigos a elementos
                     loadTableData();
                     searches.slice(0, MAX_SHOW).forEach(term => {
                         const li = document.createElement('li');
                         li.style.position = 'relative';
 
-                        // Extraer código y descripción desde el término guardado
-                        const [codigo, ...descParts] = term.split(' - ');
-                        const desc = descParts.join(' - ');
+                        const [codigoRaw, ...descParts] = term.split(' - ');
+                        const codigo = (codigoRaw || '').trim();
+                        const desc = descParts.join(' - ') || '';
 
-                        // Determinar tipo y color basado en el código (igual que en sugerencias)
-                        let type = 'Subpartida';
+                        // Intentar resolver el item real si está cargado
+                        const found = allItems.find(it => (codigo && it.codigo && (it.codigo === codigo || it.codigo.startsWith(codigo))) );
+                        const item = found ? found : { codigo: codigo, desc: desc, type: null };
+
+                        // Determinar tipo y color si no lo conocemos
                         let tagColor = '#28a745';
-                        if (codigo && codigo.length <= 4) {
-                            type = 'Partida';
-                            tagColor = '#007bff';
+                        if (!item.type) {
+                            if (codigo && codigo.replace(/\./g, '').length <= 4) {
+                                item.type = 'Partida';
+                            } else {
+                                item.type = 'Subpartida';
+                            }
                         }
 
-                        // Construir contenido del li (uso strings simples para evitar problemas con linters)
-                        const tagSpan = document.createElement('span');
-                        tagSpan.className = 'recent-tag';
-                        tagSpan.textContent = type;
-                        tagSpan.style.backgroundColor = tagColor;
-                        tagSpan.style.color = 'white';
-                        tagSpan.style.fontSize = '10px';
-                        tagSpan.style.padding = '2px 5px';
-                        tagSpan.style.borderRadius = '4px';
-                        tagSpan.style.float = 'right';
-                        tagSpan.style.marginLeft = '8px';
+                        // Construir estilos como en showSuggestions
+                        let itemStyle = '';
+                        switch(item.type) {
+                            case 'Capítulo':
+                                tagColor = '#dc3545';
+                                itemStyle = 'border-left: 3px solid #dc3545; padding-left: 8px;';
+                                break;
+                            case 'Partida':
+                                tagColor = '#007bff';
+                                itemStyle = 'border-left: 3px solid #007bff; padding-left: 8px;';
+                                break;
+                            case 'Subpartida':
+                                tagColor = '#28a745';
+                                itemStyle = 'border-left: 3px solid #28a745; padding-left: 8px;';
+                                break;
+                            default:
+                                tagColor = '#6c757d';
+                        }
 
-                        const wrapperDiv = document.createElement('div');
-                        const strong = document.createElement('strong');
-                        strong.textContent = codigo || '';
-                        wrapperDiv.appendChild(tagSpan);
-                        wrapperDiv.appendChild(strong);
+                        if (itemStyle) li.style.cssText = itemStyle;
 
-                        const small = document.createElement('small');
-                        small.style.color = '#666';
-                        small.style.display = 'block';
-                        small.style.marginTop = '4px';
-                        small.textContent = desc;
+                        const tagStyle = `background-color: ${tagColor}; color: white; font-size: 10px; padding: 2px 5px; border-radius: 4px; float: right; margin-left: 8px;`;
+                        const codigoDisplay = item.codigo && !item.codigo.startsWith('_H_') ? `<strong>${item.codigo}</strong>` : '';
 
+                        // Reutilizar layout de sugerencias
+                        let displayContent;
+                        if (item.type === 'Capítulo') {
+                            displayContent = `
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="font-weight: bold;">${codigoDisplay} ${item.nombre || ''}</div>
+                                    <span style="${tagStyle}">${item.type}</span>
+                                </div>
+                                <small style="color: #666; display: block; margin-top: 4px; padding-right: 20px;">${item.desc || ''}</small>
+                            `;
+                        } else {
+                            displayContent = `
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>${codigoDisplay}</div>
+                                    <span style="${tagStyle}">${item.type}</span>
+                                </div>
+                                <small style="color: #666; display: block; margin-top: 4px; padding-right: 20px;">${(item.desc || '').substring(0,60)}${(item.desc||'').length>60? '...' : ''}</small>
+                            `;
+                        }
+
+                        li.innerHTML = displayContent;
+
+                        // Botón eliminar (mantener funcionalidad)
                         const deleteBtn = document.createElement('span');
                         deleteBtn.className = 'delete-btn';
                         deleteBtn.innerHTML = '&times;';
@@ -421,34 +449,20 @@
                         deleteBtn.style.color = '#999';
                         deleteBtn.style.fontSize = '18px';
 
-                        // Montar li
-                        li.appendChild(wrapperDiv);
-                        li.appendChild(small);
                         li.appendChild(deleteBtn);
 
-                        // Click en el elemento (salvar + navegar si encuentra la fila)
-                        // NOTE: no modificamos el valor del input y mantenemos el historial abierto
                         li.addEventListener('click', (e) => {
                             if (e.target && e.target.classList && e.target.classList.contains('delete-btn')) return;
-
-                            const codeTrim = (codigo || '').trim();
-                            // Buscar item cargado
-                            const found = allItems.find(it => it.codigo === codeTrim || (codeTrim && it.codigo && it.codigo.startsWith(codeTrim)));
+                            const codeTrim = codigo;
                             if (found && found.element) {
-                                // Guardar y registrar la búsqueda, pero SIN escribir en el input
                                 saveRecent(term);
                                 logSearch(term);
-                                // Navegar al elemento
                                 scrollToElement(found.element);
-                                // Mantener el historial abierto: no ocultar suggestions
                             } else {
-                                // Fallback: realizar búsqueda por el término (o por el código si existe)
-                                // No escribimos en el input; performSearch mostrará sugerencias
                                 performSearch(codeTrim || term);
                             }
                         });
 
-                        // Eventos del botón eliminar
                         deleteBtn.addEventListener('mouseenter', () => deleteBtn.style.color = '#333');
                         deleteBtn.addEventListener('mouseleave', () => deleteBtn.style.color = '#999');
                         deleteBtn.addEventListener('click', (e) => {
@@ -532,21 +546,59 @@
                 return matrix[b.length][a.length];
             }
 
-            const loadTableData = () => {
+                const loadTableData = () => {
                 if (isDataLoaded) return;
                 allItems = [];
-                
-                document.querySelectorAll('.partida-row, .titulo-row, .subpartida-row').forEach(row => {
+
+                // Cargar capítulos directamente desde los h3
+                document.querySelectorAll('h3').forEach(h3 => {
+                    const text = h3.textContent;
+                    if (text && text.toUpperCase().includes('CAPÍTULO')) {
+                        const codigo = text.match(/\d{2}/)?.[0];
+                        const desc = h3.nextElementSibling?.textContent || '';
+                        
+                        if (codigo) {
+                            allItems.push({
+                                codigo,
+                                desc,
+                                normalizedDesc: normalizeText(desc),
+                                type: 'Capítulo',
+                                element: h3.parentElement,
+                                nombre: `CAPÍTULO ${parseInt(codigo)}`
+                            });
+                        }
+                    }
+                });
+
+                // Cargar partidas
+                document.querySelectorAll('.partida-row').forEach(row => {
                     const codigo = row.dataset.codigo;
                     const desc = row.dataset.descripcion;
 
                     if (codigo && desc) {
-                        let type = 'Subpartida';
-                        if (row.classList.contains('partida-row')) type = 'Partida';
-                        if (row.classList.contains('titulo-row')) type = 'Título';
-                        
-                        const normalizedDesc = normalizeText(desc);
-                        allItems.push({ codigo, desc, normalizedDesc, type, element: row });
+                        allItems.push({
+                            codigo,
+                            desc,
+                            normalizedDesc: normalizeText(desc),
+                            type: 'Partida',
+                            element: row
+                        });
+                    }
+                });
+
+                // Cargar subpartidas
+                document.querySelectorAll('.subpartida-row').forEach(row => {
+                    const codigo = row.dataset.codigo;
+                    const desc = row.dataset.descripcion;
+                    
+                    if (codigo && desc) {
+                        allItems.push({
+                            codigo,
+                            desc,
+                            normalizedDesc: normalizeText(desc),
+                            type: 'Subpartida',
+                            element: row
+                        });
                     }
                 });
                 
@@ -563,10 +615,10 @@
                 
                 // Verificar longitud mínima según el tipo de búsqueda
                 if (isNumeric) {
-                    // Para códigos: mínimo 4 caracteres sin contar puntos
+                    // Para códigos: mínimo 2 caracteres sin contar puntos
                     const codeWithoutDots = trimmedQuery.replace(/\./g, '');
-                    if (codeWithoutDots.length < 4) {
-                        suggestions.innerHTML = '<li class="no-results">Ingrese al menos 4 números para buscar por código</li>';
+                    if (codeWithoutDots.length < 2) {
+                        suggestions.innerHTML = '<li class="no-results">Ingrese al menos 2 números para buscar por código</li>';
                         suggestions.classList.add('show');
                         return;
                     }
@@ -578,99 +630,163 @@
                         return;
                     }
                 }
-                let results;
-                
+
                 const normalizedQuery = normalizeText(query);
+                let results = [];
                 
                 if (isNumeric) {
-                    // Permitir búsquedas por código con o sin '.'
-                    const codeQuery = query.trim().replace(/\./g, '');
-                    results = allItems.filter(item => {
-                        if (!item.codigo) return false;
-                        if (item.codigo.startsWith('_H_')) return false;
-                        const itemCodeNormalized = item.codigo.replace(/\./g, '');
-                        return itemCodeNormalized.startsWith(codeQuery);
+                    const codeQuery = trimmedQuery.replace(/\./g, '');
+                    
+                    // Buscar capítulos primero
+                    const chapterResults = allItems.filter(item => {
+                        if (item.type !== 'Capítulo') return false;
+                        const itemCode = item.codigo.replace(/\./g, '');
+                        // Coincidir exactamente para búsquedas de 2 dígitos
+                        if (codeQuery.length === 2) return itemCode === codeQuery;
+                        // Para búsquedas más largas, mostrar capítulos que coincidan con los primeros 2 dígitos
+                        return itemCode.startsWith(codeQuery.substring(0, 2));
                     });
+                    
+                    // Buscar partidas después
+                    const partidaResults = allItems.filter(item => {
+                        if (item.type !== 'Partida' || !item.codigo || item.codigo.startsWith('_H_')) return false;
+                        const itemCode = item.codigo.replace(/\./g, '');
+                        return itemCode.startsWith(codeQuery);
+                    });
+                    
+                    // Buscar subpartidas al final
+                    const subpartidaResults = allItems.filter(item => {
+                        if (item.type !== 'Subpartida' || !item.codigo || item.codigo.startsWith('_H_')) return false;
+                        const itemCode = item.codigo.replace(/\./g, '');
+                        return itemCode.startsWith(codeQuery);
+                    });
+                    
+                    // Combinar resultados manteniendo el orden de prioridad
+                    results = [...chapterResults, ...partidaResults, ...subpartidaResults];
                 } else {
                     const queryWords = normalizedQuery.split(' ').filter(Boolean);
-                    // Si la búsqueda es de varias palabras, buscar la frase exacta en la descripción
-                    if (queryWords.length > 1) {
-                        // Buscar la frase completa (en orden y consecutiva)
-                        results = allItems.map(item => {
-                            // Buscar la frase exacta en la descripción normalizada
-                            const idx = item.normalizedDesc.indexOf(normalizedQuery);
-                            if (idx !== -1) {
-                                // Score más alto si la frase está al inicio
-                                const score = idx === 0 ? 2 : 1;
-                                return { ...item, score };
+                    
+                    results = allItems.map(item => {
+                        let searchText, baseScore = 0;
+                        
+                        if (item.type === 'Capítulo') {
+                            // Incluir nombre del capítulo y descripción para la búsqueda
+                            searchText = normalizeText(item.nombre + ' ' + item.desc);
+                            baseScore = 1.5; // Mayor prioridad base para capítulos
+                        } else if (item.type === 'Partida') {
+                            searchText = item.normalizedDesc;
+                            baseScore = 1; // Prioridad media para partidas
+                        } else {
+                            searchText = item.normalizedDesc;
+                            baseScore = 0.5; // Prioridad base para subpartidas
+                        }
+
+                        let score = baseScore;
+                        
+                        // Buscar frase completa primero (con mayor peso)
+                        if (searchText.includes(normalizedQuery)) {
+                            score += 3;
+                        }
+                        
+                        // Búsqueda por palabras individuales
+                        queryWords.forEach(queryWord => {
+                            if (searchText.includes(queryWord)) {
+                                score += 1.5;
                             }
-                            // Si no está la frase exacta, no mostrar el resultado
-                            return null;
-                        }).filter(item => item).sort((a, b) => b.score - a.score);
-                    } else {
-                        // Búsqueda de una sola palabra, mantener lógica de similitud
-                        results = allItems.map(item => {
-                            let score = 0;
-                            const itemWords = item.normalizedDesc.split(' ');
-                            let allWordsPresent = queryWords.every(queryWord => {
-                                return itemWords.some(itemWord => {
-                                    if (itemWord.startsWith(queryWord)) return true;
-                                    const distance = levenshteinDistance(queryWord, itemWord);
-                                    const similarity = 1 - (distance / Math.max(queryWord.length, itemWord.length));
-                                    return similarity > 0.7;
-                                });
-                            });
-                            if (!allWordsPresent) return null;
-                            queryWords.forEach(queryWord => {
-                                let bestMatchScore = 0;
-                                itemWords.forEach(itemWord => {
-                                    if (itemWord.startsWith(queryWord)) {
-                                        bestMatchScore = Math.max(bestMatchScore, 0.9);
-                                    } else {
-                                        const distance = levenshteinDistance(queryWord, itemWord);
-                                        const similarity = 1 - (distance / Math.max(queryWord.length, itemWord.length));
-                                        if (similarity > 0.7) {
-                                            bestMatchScore = Math.max(bestMatchScore, similarity);
-                                        }
+                            
+                            const words = searchText.split(' ');
+                            words.forEach(word => {
+                                if (word === queryWord) {
+                                    score += 1.2; // Coincidencia exacta
+                                } else if (word.startsWith(queryWord)) {
+                                    score += 0.9; // Coincidencia al inicio
+                                } else {
+                                    const distance = levenshteinDistance(queryWord, word);
+                                    const similarity = 1 - (distance / Math.max(queryWord.length, word.length));
+                                    if (similarity > 0.8) {
+                                        score += similarity * 0.7;
                                     }
-                                });
-                                score += bestMatchScore;
+                                }
                             });
-                            return { ...item, score };
-                        }).filter(item => item && item.score > 0).sort((a, b) => b.score - a.score);
-                    }
+                        });
+
+                        return score > baseScore ? { ...item, score } : null;
+                    }).filter(item => item && item.score > baseScore)
+                      .sort((a, b) => b.score - a.score);
                 }
+                
                 showSuggestions(results.slice(0, 15));
             };
 
             const showSuggestions = (results) => {
-                suggestions.innerHTML = '<li style="padding: 8px 12px   d; font-size: 12px; color: #666; background: #f8f9fa; border-bottom: 1px solid #eee;"><strong>Sugerencias</strong></li>';
+                suggestions.innerHTML = '<li style="padding: 8px 12px; font-size: 12px; color: #666; background: #f8f9fa; border-bottom: 1px solid #eee;"><strong>Sugerencias</strong></li>';
                 if (results.length === 0) {
                     suggestions.innerHTML += '<li class="no-results">No se encontraron resultados</li>';
                 } else {
                     results.forEach(item => {
                         const li = document.createElement('li');
                         let tagColor = '#28a745'; // Subpartida (verde)
-                        if (item.type === 'Partida') tagColor = '#007bff'; // Partida (azul)
-                        if (item.type === 'Título') tagColor = '#6c757d'; // Título (gris)
+                        let itemStyle = '';
+                        
+                        // Estilos especiales por tipo (borde izquierdo en sugerencias)
+                        switch(item.type) {
+                            case 'Capítulo':
+                                tagColor = '#dc3545';
+                                itemStyle = 'border-left: 3px solid #dc3545; padding-left: 8px;';
+                                break;
+                            case 'Partida':
+                                tagColor = '#007bff';
+                                itemStyle = 'border-left: 3px solid #007bff; padding-left: 8px;';
+                                break;
+                            case 'Subpartida':
+                                tagColor = '#28a745';
+                                itemStyle = 'border-left: 3px solid #28a745; padding-left: 8px;';
+                                break;
+                            case 'Título':
+                                tagColor = '#6c757d';
+                                break;
+                        }
 
+                        // Aplicar estilo como cssText para que se renderice correctamente
+                        if (itemStyle) li.style.cssText = itemStyle;
                         const tagStyle = `background-color: ${tagColor}; color: white; font-size: 10px; padding: 2px 5px; border-radius: 4px; float: right; margin-left: 8px;`;
                         
                         const codigoDisplay = item.codigo.startsWith('_H_') ? '' : `<strong>${item.codigo}</strong>`;
 
-                        li.innerHTML = `
-                            <div>
-                                <span style="${tagStyle}">${item.type}</span>
-                                ${codigoDisplay}
-                            </div>
-                            <small style="color: #666; display: block; margin-top: 4px;">${item.desc.substring(0,60)}...</small>
-                        `;
+                        let displayContent;
+                        if (item.type === 'Capítulo') {
+                            // Para capítulos, layout mejorado
+                            displayContent = `
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="font-weight: bold;">
+                                        ${codigoDisplay} ${item.nombre}
+                                    </div>
+                                    <span style="${tagStyle}">${item.type}</span>
+                                </div>
+                                <small style="color: #666; display: block; margin-top: 4px; padding-right: 20px;">${item.desc}</small>
+                            `;
+                        } else {
+                            // Para otros tipos, mantener el formato original
+                            displayContent = `
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        ${codigoDisplay}
+                                    </div>
+                                    <span style="${tagStyle}">${item.type}</span>
+                                </div>
+                                <small style="color: #666; display: block; margin-top: 4px; padding-right: 20px;">${item.desc.substring(0,60)}${item.desc.length > 60 ? '...' : ''}</small>
+                            `;
+                        }
+
+                        li.innerHTML = displayContent;
                         li.addEventListener('click', () => {
                             scrollToElement(item.element);
                             const term = item.codigo + ' - ' + item.desc.substring(0,60);
                             // Guardar en recientes y registrar
                             saveRecent(term);
                             logSearch(term);
+                            // Cerrar las sugerencias al hacer click
+                            suggestions.classList.remove('show');
                         });
                         suggestions.appendChild(li);
                     });
@@ -683,20 +799,28 @@
                 if (!element) return;
                 // Quitar cualquier highlight anterior
                 document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+                
+                // Si el elemento es un capítulo (el contenedor div), resaltar el h3
+                if (element.querySelector('h3')) {
+                    const titulo = element.querySelector('h3');
+                    element = titulo;
+                }
+                
                 // Hacer scroll al elemento
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // Limpiar cualquier timeout previo (si existe)
+                
+                // Limpiar cualquier timeout previo
                 if (highlightTimeout) {
                     clearTimeout(highlightTimeout);
                     highlightTimeout = null;
                 }
+                
                 element.classList.remove('highlight');
-                // Forzar reflow después de quitar la clase
-                void element.offsetWidth;
+                void element.offsetWidth; // Forzar reflow
+                
+                // Aplicar highlight
                 setTimeout(() => {
                     element.classList.add('highlight');
-                    // NOTA: no programamos la eliminación automática del highlight;
-                    // permanecerá hasta la próxima selección/búsqueda.
                 }, 10);
             };
             
