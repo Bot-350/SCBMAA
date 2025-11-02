@@ -203,7 +203,10 @@
     </div>
 
     <div id="main-content" class="sidebar-open">
-        <h1>Tabla de Aranceles</h1>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+            <h1 style="margin:0;">Tabla de Aranceles</h1>
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'aranceles:estadisticas_gravamenes' %}">Ver estadísticas por capítulo</a>
+        </div>
 
         {% load custom_filters %}
         {% for seccion in secciones %}

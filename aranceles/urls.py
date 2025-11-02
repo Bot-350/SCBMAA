@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import tabla_aranceles, search_predictive
+from .views import tabla_aranceles, search_predictive, estadisticas_gravamenes
 
 app_name = 'aranceles'
 
 urlpatterns = [
     path('tabla/', tabla_aranceles, name='tabla_aranceles'),
     path('search/', search_predictive, name='search_predictive'), # Added path for search_predictive
+    path('estadisticas/', estadisticas_gravamenes, name='estadisticas_gravamenes'),
 ]

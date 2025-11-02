@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from .models import Seccion, Partida, Subpartida # Nota: Django importa Nota automáticamente si es necesario, pero es bueno ser explícito
 from usuarios.models import SearchLog
+from django.db.models import Avg, Max, Min, Count
+from .models import Capitulo
 
 @login_required
 def tabla_aranceles(request):
@@ -61,3 +63,48 @@ def search_predictive(request):
     ])
 
     return JsonResponse(results[:20], safe=False)
+
+
+@login_required
+def estadisticas_gravamenes(request):
+    """
+    Calcula estadísticas básicas (promedio, máximo, mínimo) del campo `ga`
+    por capítulo y las pasa a la plantilla.
+    """
+    estadisticas = []
+
+    # Traer capítulos con sus partidas y subpartidas para reducir consultas
+    capitulos = Capitulo.objects.prefetch_related('partidas__subpartidas').all()
+
+    for cap in capitulos:
+        # Obtener todas las subpartidas relacionadas y filtrar ga no nulo
+        subparts = [s for p in cap.partidas.all() for s in p.subpartidas.all() if s.ga is not None]
+        cantidad = len(subparts)
+        if cantidad == 0:
+            estadisticas.append({
+                'capitulo': cap,
+                'promedio': None,
+                'maximo': None,
+                'minimo': None,
+                'cantidad': 0
+            })
+            continue
+
+        # Convertir a floats para cálculos
+        ga_vals = [float(s.ga) for s in subparts]
+        promedio = sum(ga_vals) / len(ga_vals)
+        maximo = max(ga_vals)
+        minimo = min(ga_vals)
+
+        estadisticas.append({
+            'capitulo': cap,
+            'promedio': promedio,
+            'maximo': maximo,
+            'minimo': minimo,
+            'cantidad': cantidad
+        })
+
+    context = {
+        'estadisticas': estadisticas
+    }
+    return render(request, 'arancel/estadisticas.html', context)
