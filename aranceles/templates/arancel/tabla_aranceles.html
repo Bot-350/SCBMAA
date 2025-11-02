@@ -347,7 +347,10 @@
             // Configuración para búsquedas recientes
             const RECENT_STORAGE_KEY = 'recent_searches';
             const MAX_SHOW = 7;
-            const MAX_STORE = 50;
+            const MAX_STORE = 25;
+            // Historial separado para términos que el usuario escribe y confirma con Enter
+            const SEARCH_STORAGE_KEY = 'search_terms';
+            const MAX_SEARCH_STORE = 25;
 
             // Funciones para manejar búsquedas recientes
             function loadRecent() {
@@ -364,6 +367,23 @@
                 searches.unshift(term);
                 if(searches.length > MAX_STORE) searches.length = MAX_STORE;
                 localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(searches));
+            }
+
+            // Funciones para manejar el historial de términos escritos por el usuario (Enter)
+            function loadSearchTerms() {
+                try {
+                    return JSON.parse(localStorage.getItem(SEARCH_STORAGE_KEY) || '[]');
+                } catch(e) {
+                    return [];
+                }
+            }
+
+            function saveSearchTerm(term) {
+                if(!term) return;
+                const searches = loadSearchTerms().filter(t => t !== term);
+                searches.unshift(term);
+                if (searches.length > MAX_SEARCH_STORE) searches.length = MAX_SEARCH_STORE;
+                localStorage.setItem(SEARCH_STORAGE_KEY, JSON.stringify(searches));
             }
 
             function showRecent() {
@@ -889,9 +909,17 @@
                 searchInput.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
+                        const typed = searchInput.value.trim();
+                        if (typed) {
+                            saveSearchTerm(typed);
+                            console.log('Guardado en historial de búsquedas:', typed);
+                            logSearch(typed);
+                        }
                         const firstResult = suggestions.querySelector('li:not(.no-results)');
                         if (firstResult) {
                             firstResult.click();
+                        } else if (typed) {
+                            performSearch(typed);
                         }
                     }
                 });
