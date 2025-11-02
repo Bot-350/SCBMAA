@@ -571,9 +571,9 @@
                         return;
                     }
                 } else {
-                    // Para descripciones: mínimo 2 caracteres
-                    if (trimmedQuery.length < 2) {
-                        suggestions.innerHTML = '<li class="no-results">Ingrese al menos 2 letras para buscar por descripción</li>';
+                    // Para descripciones: mínimo 3 caracteres
+                    if (trimmedQuery.length < 3) {
+                        suggestions.innerHTML = '<li class="no-results">Ingrese al menos 3 letras para buscar por descripción</li>';
                         suggestions.classList.add('show');
                         return;
                     }
@@ -583,7 +583,14 @@
                 const normalizedQuery = normalizeText(query);
                 
                 if (isNumeric) {
-                    results = allItems.filter(item => !item.codigo.startsWith('_H_') && item.codigo.startsWith(query.trim()));
+                    // Permitir búsquedas por código con o sin '.'
+                    const codeQuery = query.trim().replace(/\./g, '');
+                    results = allItems.filter(item => {
+                        if (!item.codigo) return false;
+                        if (item.codigo.startsWith('_H_')) return false;
+                        const itemCodeNormalized = item.codigo.replace(/\./g, '');
+                        return itemCodeNormalized.startsWith(codeQuery);
+                    });
                 } else {
                     const queryWords = normalizedQuery.split(' ').filter(Boolean);
                     // Si la búsqueda es de varias palabras, buscar la frase exacta en la descripción
