@@ -637,7 +637,7 @@
             };
 
             const showSuggestions = (results) => {
-                suggestions.innerHTML = '<li style="padding: 8px 12px; font-size: 12px; color: #666; background: #f8f9fa; border-bottom: 1px solid #eee;"><strong>Sugerencias</strong></li>';
+                suggestions.innerHTML = '<li style="padding: 8px 12px   d; font-size: 12px; color: #666; background: #f8f9fa; border-bottom: 1px solid #eee;"><strong>Sugerencias</strong></li>';
                 if (results.length === 0) {
                     suggestions.innerHTML += '<li class="no-results">No se encontraron resultados</li>';
                 } else {
@@ -674,16 +674,22 @@
             let highlightTimeout;
             const scrollToElement = (element) => {
                 if (!element) return;
+                // Quitar cualquier highlight anterior
                 document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+                // Hacer scroll al elemento
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // Limpiar timeout anterior si existe
-                if (highlightTimeout) clearTimeout(highlightTimeout);
+                // Limpiar cualquier timeout previo (si existe)
+                if (highlightTimeout) {
+                    clearTimeout(highlightTimeout);
+                    highlightTimeout = null;
+                }
                 element.classList.remove('highlight');
                 // Forzar reflow después de quitar la clase
                 void element.offsetWidth;
                 setTimeout(() => {
                     element.classList.add('highlight');
-                    highlightTimeout = setTimeout(() => element.classList.remove('highlight'), 2800);
+                    // NOTA: no programamos la eliminación automática del highlight;
+                    // permanecerá hasta la próxima selección/búsqueda.
                 }, 10);
             };
             
