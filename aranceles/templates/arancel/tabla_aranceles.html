@@ -14,6 +14,8 @@
             --shadow-light: rgba(44, 62, 80, 0.1);
             --shadow-medium: rgba(44, 62, 80, 0.2);
             --shadow-heavy: rgba(44, 62, 80, 0.3);
+            --sidebar-width-open: 350px;
+            --sidebar-width-closed: 60px;
             /* Variables para controlar exactamente la altura visible: cabecera + 5 elementos */
             --suggestion-header-height: 36px;
             --suggestion-item-height: 56px; /* ajustar si quieres más/menos espacio entre items */
@@ -66,20 +68,69 @@
         .dropdown-item .icon { margin-right: 10px; font-size: 16px; }
         .logout-item { color: #dc3545; }
         .logout-item:hover { background-color: #fdf2f2; }
-        #sidebar { position: fixed; top: 70px; left: 0; height: calc(100vh - 70px); background-color: var(--primary-dark); transition: width 0.3s ease; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.1); overflow: hidden; }
-        #sidebar.closed { width: 60px; }
-        #sidebar.open { width: 350px; }
-        #toggle-btn { position: absolute; top: 15px; right: 15px; background: #34495e; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 20px; transition: all 0.3s ease; width: 45px; text-align: center; }
-        #toggle-btn:hover { background: #4a6741; }
-        #sidebar.closed #toggle-btn { right: 50%; transform: translateX(50%); }
+        #sidebar { 
+            position: fixed; 
+            top: 70px; 
+            left: 0; 
+            height: calc(100vh - 70px); 
+            background-color: var(--primary-dark); 
+            transition: all 0.3s ease-in-out; 
+            z-index: 1000; 
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1); 
+            overflow: hidden;
+            width: var(--sidebar-width-open);
+        }
+        #sidebar.closed { 
+            width: var(--sidebar-width-closed);
+        }
+        #sidebar.open { 
+            width: var(--sidebar-width-open);
+        }
+        /* Botón toggle sidebar */
+        #toggle-btn { 
+            position: absolute; 
+            top: 15px; 
+            right: 15px; 
+            background: var(--primary-medium); 
+            color: white; 
+            border: none; 
+            padding: 8px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 18px; 
+            transition: all 0.2s ease-in-out; 
+            width: 36px; 
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 1100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            outline: none;
+        }
+        #toggle-btn:hover { 
+            background: var(--primary-light);
+            transform: scale(1.05);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        #toggle-btn:active {
+            transform: scale(0.95);
+        }
+        #sidebar.closed #toggle-btn { 
+            right: 12px; 
+        }
         #search-container { 
             padding: 60px 20px 20px 20px; 
             opacity: 1; 
-            transition: opacity 0.3s ease;
+            visibility: visible;
+            transition: opacity 0.3s ease, visibility 0s;
             position: relative;
         }
         #sidebar.closed #search-container { 
             opacity: 0; 
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0s 0.2s;
             pointer-events: none; 
         }
         .search-wrapper {
@@ -144,9 +195,22 @@
     #suggestions .delete-btn { display: none !important; }
         #sidebar-title { color: white; text-align: center; margin: 0 0 20px 0; font-size: 18px; font-weight: bold; opacity: 1; transition: opacity 0.3s ease; }
         #sidebar.closed #sidebar-title { opacity: 0; }
-        #main-content { transition: margin-left 0.3s ease; padding: 20px; margin-top: 70px; }
-        #main-content.sidebar-open { margin-left: 350px; }
-        #main-content.sidebar-closed { margin-left: 60px; }
+        #main-content { 
+            transition: margin-left 0.3s ease; 
+            padding: 20px; 
+            margin-top: 70px;
+            margin-left: var(--sidebar-width-open);
+            width: calc(100% - var(--sidebar-width-open));
+            box-sizing: border-box;
+        }
+        #main-content.sidebar-open { 
+            margin-left: var(--sidebar-width-open);
+            width: calc(100% - var(--sidebar-width-open));
+        }
+        #main-content.sidebar-closed { 
+            margin-left: var(--sidebar-width-closed);
+            width: calc(100% - var(--sidebar-width-closed));
+        }
 
         /* --- ESTILOS DE LA TABLA (MODIFICADOS) --- */
         table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #2c3e50; }
@@ -191,7 +255,7 @@
     </div>
 
     <div id="sidebar" class="open">
-        <button id="toggle-btn">☰</button>
+        <button id="toggle-btn" aria-label="Toggle sidebar" title="Ocultar buscador">☰</button>
         <div id="search-container">
             <h3 id="sidebar-title">Búsqueda de Aranceles</h3>
             <div class="search-wrapper">
@@ -329,12 +393,14 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('search');
-            const clearSearchBtn = document.getElementById('clear-search');
-            const suggestions = document.getElementById('suggestions');
             const toggleBtn = document.getElementById('toggle-btn');
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('main-content');
+            // Esta sección se ha eliminado para evitar conflictos con la función toggleSidebar
+            // --- resto de inicializaciones ---
+            const searchInput = document.getElementById('search');
+            const clearSearchBtn = document.getElementById('clear-search');
+            const suggestions = document.getElementById('suggestions');
             const userIcon = document.getElementById('user-icon');
             const userDropdown = document.getElementById('user-dropdown');
             const homeLink = document.getElementById('home-link');
@@ -526,29 +592,55 @@
                 }
             });
 
+            // Inicialización del botón toggle del sidebar
             if (toggleBtn && sidebar && mainContent) {
-                const updateSidebarState = () => {
+                // Función para actualizar el estado del sidebar
+                function toggleSidebar() {
+                    console.log('Toggle clicked');
                     const isClosed = sidebar.classList.contains('closed');
-                    toggleBtn.innerHTML = isClosed ? '🔍' : '☰';
-                    if (!isClosed) {
-                        setTimeout(() => searchInput.focus(), 300);
-                    }
-                };
-                toggleBtn.addEventListener('click', () => {
-                    if (sidebar.classList.contains('open')) {
-                        sidebar.classList.remove('open');
-                        sidebar.classList.add('closed');
-                        mainContent.classList.remove('sidebar-open');
-                        mainContent.classList.add('sidebar-closed');
-                    } else {
+                    console.log('Current state - isClosed:', isClosed);
+                    
+                    if (isClosed) {
+                        console.log('Opening sidebar');
                         sidebar.classList.remove('closed');
                         sidebar.classList.add('open');
                         mainContent.classList.remove('sidebar-closed');
                         mainContent.classList.add('sidebar-open');
+                        toggleBtn.innerHTML = '☰';
+                        toggleBtn.title = 'Ocultar buscador';
+                        
+                        // Retrasar el focus del input para permitir la transición
+                        setTimeout(() => {
+                            const searchInput = document.getElementById('search');
+                            if (searchInput) {
+                                searchInput.focus();
+                            }
+                        }, 300);
+                    } else {
+                        console.log('Closing sidebar');
+                        sidebar.classList.remove('open');
+                        sidebar.classList.add('closed');
+                        mainContent.classList.remove('sidebar-open');
+                        mainContent.classList.add('sidebar-closed');
+                        toggleBtn.innerHTML = '🔍';
+                        toggleBtn.title = 'Mostrar buscador';
                     }
-                    updateSidebarState();
+                }
+
+                // Agregar el evento click
+                toggleBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleSidebar();
                 });
-                updateSidebarState();
+
+                // Asegurar que el sidebar comienza abierto
+                sidebar.classList.remove('closed');
+                sidebar.classList.add('open');
+                mainContent.classList.remove('sidebar-closed');
+                mainContent.classList.add('sidebar-open');
+                toggleBtn.innerHTML = '☰';
+                toggleBtn.title = 'Ocultar buscador';
             }
 
             function normalizeText(text) {
