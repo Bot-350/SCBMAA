@@ -70,16 +70,16 @@
         .logout-item:hover { background-color: #fdf2f2; }
         #sidebar { 
             position: fixed; 
-            top: var(--header-height, 70px); /* respectar variable de header cuando exista */
+            top: var(--header-height, 70px); 
             left: 0; 
-            bottom: 0; /* asegurar que llegue siempre al borde inferior */
-            height: auto; /* dejar que bottom controle la altura */
-            min-height: calc(100vh - var(--header-height, 70px)); /* respaldo para navegadores/edge cases */
+            bottom: 0; /* ensure it always reaches the bottom */
+            height: auto; /* let bottom control the height */
+            min-height: calc(100vh - var(--header-height, 70px));
             background-color: var(--primary-dark); 
             transition: transform 0.3s ease-in-out, width 0.3s ease-in-out; 
             z-index: 1000; 
             box-shadow: 2px 0 5px rgba(0,0,0,0.1); 
-            overflow: auto; /* permitir scroll interno si el contenido supera la altura */
+            overflow: auto; /* allow internal scrolling */
             width: var(--sidebar-width-open);
         }
         #sidebar.closed { 
@@ -199,7 +199,7 @@
         #sidebar.closed #sidebar-title { opacity: 0; }
         #main-content { 
             transition: margin-left 0.3s ease; 
-            padding: var(--content-padding, 20px); 
+            padding: 20px; 
             margin-top: 70px;
             margin-left: var(--sidebar-width-open);
             width: calc(100% - var(--sidebar-width-open));
@@ -215,7 +215,7 @@
         }
 
         /* --- ESTILOS DE LA TABLA (MODIFICADOS) --- */
-    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #2c3e50; }
         th, td { border: 1px solid #bdc3c7; padding: 10px 8px; text-align: center; vertical-align: middle; }
         th { background-color: #2c3e50; color: white; font-weight: bold; text-transform: uppercase; font-size: 12px; }
         .text-left { text-align: left; }
@@ -232,29 +232,12 @@
         .titulo-row td { background-color: #aed6f1; color: #307097; font-style: italic; }
         .subpartida-descripcion { padding-left: 30px !important; }
         
-    /* Estilos para el contenedor de notas */
-        .notas-container { background-color: #eaf2f8; border-left: 4px solid #3498db; padding: 15px 20px; margin: 20px 0; border-radius: 4px; font-size: 14px; box-sizing: border-box; }
-
-        /* Mantener un tamaño amplio en pantallas muy grandes, pero permitir adaptarse cuando el sidebar reduce el espacio */
-        @media (min-width: 1400px) {
-            table, .notas-container {
-                min-width: 1100px;
-            }
-        }
+        /* Estilos para el contenedor de notas */
+        .notas-container { background-color: #eaf2f8; border-left: 4px solid #3498db; padding: 15px 20px; margin: 20px 0; border-radius: 4px; font-size: 14px; }
         .notas-container h4 { margin: 0 0 10px 0; color: #2b6b96; }
         .notas-container ul { padding-left: 20px; margin: 0; list-style-type: none; }
         .notas-container li { margin-bottom: 8px; line-height: 1.5; display: flex; }
         .notas-container li .letra { font-weight: bold; margin-right: 8px; }
-
-        /* Contenedor central para alinear tablas y notas con el mismo ancho */
-        .content-inner {
-            max-width: 1100px; /* ajustar si necesitas que la tabla sea más ancha */
-            margin: 0 auto; /* centrar dentro de #main-content */
-            width: 100%;
-            box-sizing: border-box;
-            overflow-x: auto; /* permitir scroll horizontal conjunto para tablas y notas */
-            -webkit-overflow-scrolling: touch;
-        }
     </style>
 </head>
 <body>
@@ -272,8 +255,7 @@
             </div>
         </div>
     </div>
-    </div>
-    
+
     <div id="sidebar" class="open">
         <button id="toggle-btn" aria-label="Toggle sidebar" title="Ocultar buscador">☰</button>
         <div id="search-container">
@@ -287,7 +269,6 @@
     </div>
 
     <div id="main-content" class="sidebar-open">
-        <div class="content-inner">
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <h1 style="margin:0;">Tabla de Aranceles</h1>
             <a class="btn btn-sm btn-outline-primary" href="{% url 'aranceles:estadisticas_gravamenes' %}">Ver estadísticas por capítulo</a>
