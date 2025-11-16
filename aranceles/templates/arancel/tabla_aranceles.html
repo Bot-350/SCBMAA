@@ -221,6 +221,7 @@
         .text-left { text-align: left; }
         .highlight, .highlight td, h3.highlight {
             background-color: #ffeb3b !important;
+            color: #000 !important; /* Texto negro cuando se resalta */
             animation: blink-highlight 0.35s steps(1, end) 8;
         }
         @keyframes blink-highlight {
@@ -720,15 +721,21 @@
                 });
                 
                 isDataLoaded = true;
-                console.log(`Buscador listo. Se cargaron ${allItems.length} items para la búsqueda.`);
+                // Exponer temporalmente para depuración en consola del navegador
+                try { window.__searchAllItems = allItems; } catch(e) { /* noop en entornos restringidos */ }
+                console.log(`Buscador listo. Se cargaron ${allItems.length} items para la búsqueda. (window.__searchAllItems disponible para depuración)`, allItems.slice(0,5));
             };            const performSearch = (query) => {
-                const trimmedQuery = query.trim();
-                if (!trimmedQuery) {
-                    suggestions.classList.remove('show');
-                    return;
-                }
+                try {
+                    const trimmedQuery = query.trim();
+                    if (!trimmedQuery) {
+                        suggestions.classList.remove('show');
+                        return;
+                    }
 
-                const isNumeric = /^\d+[\d.]*$/.test(trimmedQuery);
+                    const isNumeric = /^\d+[\d.]*$/.test(trimmedQuery);
+
+                    // Debug log
+                    console.log('performSearch start', { query: trimmedQuery, isNumeric });
                 
                 // Verificar longitud mínima según el tipo de búsqueda
                 if (isNumeric) {
@@ -740,28 +747,28 @@
                         return;
                     }
                 } else {
-                    // Para descripciones: mínimo 3 caracteres
-                    if (trimmedQuery.length < 3) {
-                        suggestions.innerHTML = '<li class="no-results">Ingrese al menos 3 letras para buscar por descripción</li>';
+                    // Para descripciones: mínimo 2 caracteres (hacer la búsqueda más tolerante)
+                    if (trimmedQuery.length < 2) {
+                        suggestions.innerHTML = '<li class="no-results">Ingrese al menos 2 letras para buscar por descripción</li>';
                         suggestions.classList.add('show');
                         return;
                     }
                 }
 
-                const normalizedQuery = normalizeText(query);
-                let results = [];
+                    const normalizedQuery = normalizeText(query);
+                    let results = [];
+
+                    console.log('performSearch normalizedQuery', normalizedQuery, 'allItemsCount', allItems.length);
                 
                 if (isNumeric) {
                     const codeQuery = trimmedQuery.replace(/\./g, '');
                     
-                    // Buscar capítulos primero
+                    // Buscar capítulos primero (solo cuando se solicita exactamente por capítulo: 2 dígitos)
                     const chapterResults = allItems.filter(item => {
                         if (item.type !== 'Capítulo') return false;
                         const itemCode = item.codigo.replace(/\./g, '');
-                        // Coincidir exactamente para búsquedas de 2 dígitos
-                        if (codeQuery.length === 2) return itemCode === codeQuery;
-                        // Para búsquedas más largas, mostrar capítulos que coincidan con los primeros 2 dígitos
-                        return itemCode.startsWith(codeQuery.substring(0, 2));
+                        // Solo mostrar capítulos cuando la búsqueda es exactamente de 2 dígitos
+                        return codeQuery.length === 2 && itemCode === codeQuery;
                     });
                     
                     // Buscar partidas después
@@ -781,58 +788,58 @@
                     // Combinar resultados manteniendo el orden de prioridad
                     results = [...chapterResults, ...partidaResults, ...subpartidaResults];
                 } else {
-                    const queryWords = normalizedQuery.split(' ').filter(Boolean);
-                    
-                    results = allItems.map(item => {
-                        let searchText, baseScore = 0;
-                        
-                        if (item.type === 'Capítulo') {
-                            // Incluir nombre del capítulo y descripción para la búsqueda
-                            searchText = normalizeText(item.nombre + ' ' + item.desc);
-                            baseScore = 1.5; // Mayor prioridad base para capítulos
-                        } else if (item.type === 'Partida') {
-                            searchText = item.normalizedDesc;
-                            baseScore = 1; // Prioridad media para partidas
-                        } else {
-                            searchText = item.normalizedDesc;
-                            baseScore = 0.5; // Prioridad base para subpartidas
-                        }
+                    // Hacer la búsqueda de texto similar a la búsqueda numérica:
+                    // 1) Buscar coincidencias en Capítulos (por nombre/descripcion)
+                    // 2) Buscar coincidencias en Partidas (por descripción normalizada)
+                    // 3) Buscar coincidencias en Subpartidas (por descripción normalizada)
+                    // Dentro de cada grupo, ordenar por la posición de la coincidencia (antes = más relevante)
+                    const safeNormalized = normalizedQuery;
 
-                        let score = baseScore;
-                        
-                        // Buscar frase completa primero (con mayor peso)
-                        if (searchText.includes(normalizedQuery)) {
-                            score += 3;
-                        }
-                        
-                        // Búsqueda por palabras individuales
-                        queryWords.forEach(queryWord => {
-                            if (searchText.includes(queryWord)) {
-                                score += 1.5;
-                            }
-                            
-                            const words = searchText.split(' ');
-                            words.forEach(word => {
-                                if (word === queryWord) {
-                                    score += 1.2; // Coincidencia exacta
-                                } else if (word.startsWith(queryWord)) {
-                                    score += 0.9; // Coincidencia al inicio
-                                } else {
-                                    const distance = levenshteinDistance(queryWord, word);
-                                    const similarity = 1 - (distance / Math.max(queryWord.length, word.length));
-                                    if (similarity > 0.8) {
-                                        score += similarity * 0.7;
-                                    }
-                                }
-                            });
-                        });
+                    const chapterResults = allItems.filter(item => {
+                        if (item.type !== 'Capítulo') return false;
+                        const text = normalizeText((item.nombre || '') + ' ' + (item.desc || ''));
+                        return text.includes(safeNormalized);
+                    });
 
-                        return score > baseScore ? { ...item, score } : null;
-                    }).filter(item => item && item.score > baseScore)
-                      .sort((a, b) => b.score - a.score);
+                    const partidaResults = allItems.filter(item => {
+                        if (item.type !== 'Partida') return false;
+                        const text = item.normalizedDesc || normalizeText(item.desc || '');
+                        return text.includes(safeNormalized);
+                    });
+
+                    const subpartidaResults = allItems.filter(item => {
+                        if (item.type !== 'Subpartida') return false;
+                        const text = item.normalizedDesc || normalizeText(item.desc || '');
+                        return text.includes(safeNormalized);
+                    });
+
+                    const sortByMatchPos = (arr) => arr.sort((a,b) => {
+                        const taText = (a.normalizedDesc || normalizeText((a.nombre||'')+' '+(a.desc||''))).indexOf(safeNormalized);
+                        const tbText = (b.normalizedDesc || normalizeText((b.nombre||'')+' '+(b.desc||''))).indexOf(safeNormalized);
+                        return (taText === tbText) ? 0 : (taText < tbText ? -1 : 1);
+                    });
+
+                    sortByMatchPos(chapterResults);
+                    sortByMatchPos(partidaResults);
+                    sortByMatchPos(subpartidaResults);
+
+                    results = [...chapterResults, ...partidaResults, ...subpartidaResults];
                 }
                 
+                
+                // Mostrar sugerencias (debuggable)
+                try {
+                    console.log('performSearch results count', results.length, results.slice(0,5).map(r => ({ codigo: r.codigo, tipo: r.type, desc: (r.desc||'').substring(0,60) })));
+                } catch(e) {
+                    console.warn('Error al mapear resultados para logger', e);
+                }
+
                 showSuggestions(results.slice(0, 15));
+                } catch(err) {
+                    console.error('Error en performSearch:', err);
+                    suggestions.innerHTML = '<li class="no-results">Error al realizar la búsqueda (ver consola)</li>';
+                    suggestions.classList.add('show');
+                }
             };
 
             const showSuggestions = (results) => {
@@ -867,10 +874,15 @@
                         // Aplicar estilo como cssText para que se renderice correctamente
                         if (itemStyle) li.style.cssText = itemStyle;
                         const tagStyle = `background-color: ${tagColor}; color: white; font-size: 10px; padding: 2px 5px; border-radius: 4px; float: right; margin-left: 8px;`;
-                        
-                        const codigoDisplay = item.codigo.startsWith('_H_') ? '' : `<strong>${item.codigo}</strong>`;
+
+                        // Proteger acceso a item.codigo (puede ser undefined para capítulos)
+                        let codigoDisplay = '';
+                        if (item.codigo && typeof item.codigo === 'string') {
+                            codigoDisplay = item.codigo.startsWith('_H_') ? '' : `<strong>${item.codigo}</strong>`;
+                        }
 
                         let displayContent;
+                        const safeDesc = item.desc || '';
                         if (item.type === 'Capítulo') {
                             // Para capítulos, layout mejorado
                             displayContent = `
@@ -880,7 +892,7 @@
                                     </div>
                                     <span style="${tagStyle}">${item.type}</span>
                                 </div>
-                                <small style="color: #666; display: block; margin-top: 4px; padding-right: 20px;">${item.desc}</small>
+                                <small style="color: #666; display: block; margin-top: 4px; padding-right: 20px;">${safeDesc}</small>
                             `;
                         } else {
                             // Para otros tipos, mantener el formato original
@@ -891,7 +903,7 @@
                                     </div>
                                     <span style="${tagStyle}">${item.type}</span>
                                 </div>
-                                <small style="color: #666; display: block; margin-top: 4px; padding-right: 20px;">${item.desc.substring(0,60)}${item.desc.length > 60 ? '...' : ''}</small>
+                                <small style="color: #666; display: block; margin-top: 4px; padding-right: 20px;">${safeDesc.substring(0,60)}${safeDesc.length > 60 ? '...' : ''}</small>
                             `;
                         }
 
@@ -980,6 +992,9 @@
             }
 
             if (searchInput) {
+                // Cargar inmediatamente los datos de la tabla para que las búsquedas funcionen sin demora
+                try { loadTableData(); } catch(e) { console.warn('loadTableData initial call failed', e); }
+                // Mantener un intento adicional por si el DOM no estaba completamente listo
                 setTimeout(loadTableData, 1000); 
 
                 // Mostrar búsquedas recientes al hacer click si está vacío
