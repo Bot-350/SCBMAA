@@ -217,17 +217,18 @@
         /* --- ESTILOS DE LA TABLA (MODIFICADOS) --- */
         table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #2c3e50; }
         th, td { border: 1px solid #bdc3c7; padding: 10px 8px; text-align: center; vertical-align: middle; }
+        thead { position: sticky; top: 70px; z-index: 100; }
         th { background-color: #2c3e50; color: white; font-weight: bold; text-transform: uppercase; font-size: 12px; }
         .text-left { text-align: left; }
         .highlight, .highlight td, h3.highlight {
-            background-color: #ffeb3b !important;
+            background-color: #fff9c4 !important;
             color: #000 !important; /* Texto negro cuando se resalta */
             animation: blink-highlight 0.35s steps(1, end) 8;
         }
         @keyframes blink-highlight {
-            0%   { background-color: #ffeb3b; }
+            0%   { background-color: #fff9c4; }
             50%  { background-color: #fffde7; }
-            100% { background-color: #ffeb3b; }
+            100% { background-color: #fff9c4; }
         }
         .partida-row td { background-color: #3498db; color: white; font-weight: bold; border-top: 2px solid #5f81a3 !important; }
         .titulo-row td { background-color: #aed6f1; color: #307097; font-style: italic; }
@@ -272,7 +273,7 @@
     <div id="main-content" class="sidebar-open">
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <h1 style="margin:0;">Tabla de Aranceles</h1>
-            <a class="btn btn-sm btn-outline-primary" href="{% url 'aranceles:estadisticas_gravamenes' %}">Ver estadísticas por capítulo</a>
+            <button id="export-btn" class="btn btn-sm btn-outline-success" style="display:flex;align-items:center;gap:6px;"><span>💾</span> Exportar tabla</button>
         </div>
 
         {% load custom_filters %}

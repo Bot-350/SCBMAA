@@ -53,10 +53,18 @@ class Subpartida(models.Model):
     ace_66_mexico = models.CharField(max_length=50, blank=True, null=True)
     ace_22_chile = models.CharField(max_length=50, blank=True, null=True)
     ace_22_prot = models.CharField(max_length=50, blank=True, null=True)
-    # NO AÑADIMOS ice_iehd PORQUE NO ESTÁ EN LA IMAGEN PARA LAS SUBPARTIDAS
+    es_titulo_intermedio = models.BooleanField(default=False)
+    orden = models.IntegerField(default=0, db_index=True)
 
     def __str__(self):
         return self.codigo
+
+    class Meta:
+        ordering = ('orden',)
+    # Nota: no override de save() para evitar reordenar automáticamente.
+    # El orden se conservará según el campo `orden` (provisto por la importación desde Excel
+    # o por una acción/command específica). Si se desea recalcular, usar el comando
+    # `python manage.py recalcular_orden`.
 
 class Nota(models.Model):
     TIPO_NOTA_CHOICES = [
@@ -82,5 +90,43 @@ class ItemNota(models.Model):
     texto = models.TextField()
 
     def __str__(self):
-      
-        return self.nombre
+        return f"{self.nota} - {self.letra}"
+
+
+class LogActualizacion(models.Model):
+    fecha_inicio = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50, default='Pendiente')
+    filas_agregadas = models.IntegerField(default=0)
+    filas_modificadas = models.IntegerField(default=0)
+    filas_eliminadas = models.IntegerField(default=0)
+    detalles = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Log {self.fecha_inicio} - {self.status}"
+
+    class Meta:
+        ordering = ['-fecha_inicio']
+
+
+class RegistroCambio(models.Model):
+    TIPOS_CAMBIO = [
+        ('crear', 'Creación'),
+        ('actualizar', 'Actualización'),
+        ('eliminar', 'Eliminación'),
+    ]
+    
+    fecha = models.DateTimeField(auto_now_add=True)
+    tipo_cambio = models.CharField(max_length=20, choices=TIPOS_CAMBIO)
+    modelo = models.CharField(max_length=50)  # 'Subpartida', 'Partida', etc.
+    objeto_id = models.IntegerField()
+    usuario = models.CharField(max_length=150, blank=True, null=True)
+    descripcion = models.TextField()
+    cambios_detalles = models.JSONField(default=dict, blank=True)  # Guarda cambios específicos
+
+    def __str__(self):
+        return f"{self.get_tipo_cambio_display()} - {self.modelo} (ID: {self.objeto_id}) - {self.fecha}"
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = 'Registro de Cambio'
+        verbose_name_plural = 'Registros de Cambios'
