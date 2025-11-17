@@ -61,80 +61,69 @@
         #user-icon:hover { background-color: rgba(255,255,255,0.1); }
         #user-dropdown { position: absolute; top: calc(100% + 5px); right: 0; background-color: white; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 150px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; z-index: 1002; }
         #user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
-        #user-dropdown::before { content: ''; position: absolute; top: -8px; right: 12px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid white; }
+        #user-dropdown::before { content: ''; position: absolute; top: -6px; left: 12px; right: auto; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid white; }
         .dropdown-item { padding: 12px 16px; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #eee; display: flex; align-items: center; color: #333; text-decoration: none; }
         .dropdown-item:last-child { border-bottom: none; }
         .dropdown-item:hover { background-color: #f8f9fa; }
         .dropdown-item .icon { margin-right: 10px; font-size: 16px; }
         .logout-item { color: #dc3545; }
         .logout-item:hover { background-color: #fdf2f2; }
-        #sidebar { 
-            position: fixed; 
-            top: var(--header-height, 70px); 
-            left: 0; 
-            bottom: 0; /* ensure it always reaches the bottom */
-            height: auto; /* let bottom control the height */
-            min-height: calc(100vh - var(--header-height, 70px));
-            background-color: var(--primary-dark); 
-            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out; 
-            z-index: 1000; 
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1); 
-            overflow: auto; /* allow internal scrolling */
-            width: var(--sidebar-width-open);
-        }
-        #sidebar.closed { 
-            width: var(--sidebar-width-closed);
-        }
-        #sidebar.open { 
-            width: var(--sidebar-width-open);
-        }
-        /* Botón toggle sidebar */
-        #toggle-btn { 
-            position: absolute; 
-            top: 15px; 
-            right: 15px; 
-            background: var(--primary-medium); 
-            color: white; 
-            border: none; 
-            padding: 8px; 
-            border-radius: 4px; 
-            cursor: pointer; 
-            font-size: 18px; 
-            transition: all 0.2s ease-in-out; 
-            width: 36px; 
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            z-index: 1100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            outline: none;
-        }
-        #toggle-btn:hover { 
-            background: var(--primary-light);
-            transform: scale(1.05);
-            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-        }
-        #toggle-btn:active {
-            transform: scale(0.95);
-        }
-        #sidebar.closed #toggle-btn { 
-            right: 12px; 
-        }
+        /* Barra lateral eliminada: buscar en el top-bar (usuario izquierda, logo centro, buscar derecha) */
         #search-container { 
-            padding: 60px 20px 20px 20px; 
+            padding: 0; 
             opacity: 1; 
             visibility: visible;
-            transition: opacity 0.3s ease, visibility 0s;
             position: relative;
         }
-        #sidebar.closed #search-container { 
-            opacity: 0; 
-            visibility: hidden;
-            transition: opacity 0.2s ease, visibility 0s 0.2s;
-            pointer-events: none; 
+        /* Top-bar layout regions */
+        .top-left { width: 64px; display: flex; align-items: center; justify-content: flex-start; }
+        .top-center { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .top-right { width: 420px; display: flex; align-items: center; justify-content: flex-end; position: relative; }
+
+        /* Top-search now inline inside the top-bar and expandible on click */
+        .top-search { position: relative; right: auto; top: auto; display: flex; align-items: center; z-index: 1105; transition: width 0.22s ease, opacity 0.18s ease; width: 44px; overflow: visible; }
+        .top-search .search-wrapper { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; }
+        .search-toggle-btn { background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; margin-left: 8px; flex: 0 0 auto; }
+
+        /* Collapsed state: only the icon (small clickable area). Expanded: white search input inside the bar */
+        .top-search #search { width: 0; opacity: 0; padding: 0; border: none; pointer-events: none; transition: width 0.18s ease, opacity 0.18s ease, padding 0.18s ease; box-sizing: border-box; min-width: 0; }
+        .top-search.expanded { width: 360px; }
+        .top-search.expanded .search-wrapper { background-color: #ffffff; padding: 6px; border-radius: 6px; box-shadow: 0 4px 18px rgba(0,0,0,0.18); margin-right: 8px; }
+        .top-search.expanded #search { width: 100%; opacity: 1; padding: 10px 12px; border-radius: 4px; border: none; pointer-events: auto; }
+        .top-search .clear-btn { background: transparent; border: none; font-size: 14px; margin-left: 8px; cursor: pointer; display: none; }
+        .top-search.expanded .clear-btn { display: inline-block; }
+
+        /* Center the main logo absolutely in the header so it's truly centered on the page */
+        #home-link {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1200;
+            margin: 0;
+            pointer-events: auto;
         }
+
+        /* User dropdown: ensure it displays fully and isn't clipped; align under the user icon */
+        #user-container { margin-left: 0; position: relative; }
+        #user-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0; /* align to left edge of the user container */
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-6px);
+            transition: all 0.18s ease;
+            z-index: 2000;
+            overflow: visible;
+        }
+        #user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        #user-icon { margin-left: 8px; }
         .search-wrapper {
             position: relative;
             width: 100%;
@@ -156,14 +145,14 @@
             max-height: calc(var(--suggestion-header-height) + (5 * var(--suggestion-item-height)));
             overflow-y: auto;
             position: absolute;
-            width: calc(100% - 40px); /* Ajustado al ancho del input */
+            width: 100%;
             top: 100%;
-            left: 20px; /* Alinear con el padding del contenedor */
+            left: 0;
             background-color: white;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
+            z-index: 2100;
             display: none;
             box-sizing: border-box;
         }
@@ -198,20 +187,12 @@
         #sidebar-title { color: white; text-align: center; margin: 0 0 20px 0; font-size: 18px; font-weight: bold; opacity: 1; transition: opacity 0.3s ease; }
         #sidebar.closed #sidebar-title { opacity: 0; }
         #main-content { 
-            transition: margin-left 0.3s ease; 
+            transition: margin 0.3s ease; 
             padding: 20px; 
             margin-top: 70px;
-            margin-left: var(--sidebar-width-open);
-            width: calc(100% - var(--sidebar-width-open));
+            margin-left: 0;
+            width: 100%;
             box-sizing: border-box;
-        }
-        #main-content.sidebar-open { 
-            margin-left: var(--sidebar-width-open);
-            width: calc(100% - var(--sidebar-width-open));
-        }
-        #main-content.sidebar-closed { 
-            margin-left: var(--sidebar-width-closed);
-            width: calc(100% - var(--sidebar-width-closed));
         }
 
         /* --- ESTILOS DE LA TABLA (MODIFICADOS) --- */
@@ -221,14 +202,14 @@
         th { background-color: #2c3e50; color: white; font-weight: bold; text-transform: uppercase; font-size: 12px; }
         .text-left { text-align: left; }
         .highlight, .highlight td, h3.highlight {
-            background-color: #fff9c4 !important;
+            background-color: #FFFF00 !important;
             color: #000 !important; /* Texto negro cuando se resalta */
             animation: blink-highlight 0.35s steps(1, end) 8;
         }
         @keyframes blink-highlight {
-            0%   { background-color: #fff9c4; }
-            50%  { background-color: #fffde7; }
-            100% { background-color: #fff9c4; }
+            0%   { background-color: #FFFF00; }
+            50%  { background-color: #FFFF33; }
+            100% { background-color: #FFFF00; }
         }
         .partida-row td { background-color: #3498db; color: white; font-weight: bold; border-top: 2px solid #5f81a3 !important; }
         .titulo-row td { background-color: #aed6f1; color: #307097; font-style: italic; }
@@ -245,28 +226,32 @@
 <body>
 
     <div id="top-bar">
-        <h1 id="home-link">SCBMAA</h1>
-        <div id="user-container">
-            <div id="user-icon">👤</div>
-            <div id="user-dropdown">
-                <a href="{% url 'usuarios:perfil' %}" class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></a>
-                {% if request.user.is_staff or request.user.is_superuser %}
-                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
-                {% endif %}
-                <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
+        <div class="top-left">
+            <div id="user-container">
+                <div id="user-icon">👤</div>
+                <div id="user-dropdown">
+                    <a href="{% url 'usuarios:perfil' %}" class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></a>
+                    {% if request.user.is_staff or request.user.is_superuser %}
+                    <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
+                    {% endif %}
+                    <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="sidebar" class="open">
-        <button id="toggle-btn" aria-label="Toggle sidebar" title="Ocultar buscador">☰</button>
-        <div id="search-container">
-            <h3 id="sidebar-title">Búsqueda de Aranceles</h3>
-            <div class="search-wrapper">
-                <input type="text" id="search" placeholder="Buscar por código o descripción..." autocomplete="off" style="padding-right: 32px;">
-                <button id="clear-search" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;font-size:18px;cursor:pointer;color:#888;">&times;</button>
+        <div class="top-center">
+            <h1 id="home-link">SCBMAA</h1>
+        </div>
+
+        <div class="top-right">
+            <div id="top-search" class="top-search" aria-hidden="true">
+                <div class="search-wrapper">
+                    <input type="text" id="search" placeholder="Buscar por código o descripción..." autocomplete="off">
+                    <button id="clear-search" style="display:none;position:relative;margin-left:8px;background:transparent;border:none;font-size:18px;cursor:pointer;color:#888;">&times;</button>
+                </div>
+                <button id="search-toggle" class="search-toggle-btn" aria-label="Buscar">🔍</button>
+                <ul id="suggestions"></ul>
             </div>
-            <ul id="suggestions"></ul>
         </div>
     </div>
 
@@ -409,6 +394,45 @@
             const userDropdown = document.getElementById('user-dropdown');
             const homeLink = document.getElementById('home-link');
             const logoutBtn = document.getElementById('logout-btn');
+            const searchToggle = document.getElementById('search-toggle');
+            const topSearch = document.getElementById('top-search');
+
+            if (searchToggle && topSearch) {
+                // Toggle expand/collapse of inline search inside the top-bar
+                searchToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const expanded = topSearch.classList.toggle('expanded');
+                    topSearch.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+                    if (expanded) {
+                        const s = document.getElementById('search');
+                        if (s) { s.focus(); }
+                        if (typeof showRecent === 'function') showRecent();
+                    } else {
+                        suggestions.classList.remove('show');
+                    }
+                });
+
+                // Close when clicking outside the search area
+                document.addEventListener('click', function(e) {
+                    if (!topSearch.contains(e.target) && !searchToggle.contains(e.target)) {
+                        if (topSearch.classList.contains('expanded')) {
+                            topSearch.classList.remove('expanded');
+                            topSearch.setAttribute('aria-hidden', 'true');
+                            suggestions.classList.remove('show');
+                        }
+                    }
+                });
+
+                // Close with Escape
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && topSearch.classList.contains('expanded')) {
+                        topSearch.classList.remove('expanded');
+                        topSearch.setAttribute('aria-hidden', 'true');
+                        suggestions.classList.remove('show');
+                        if (searchToggle) searchToggle.focus();
+                    }
+                });
+            }
             
             let searchTimeout;
             let allItems = [];
