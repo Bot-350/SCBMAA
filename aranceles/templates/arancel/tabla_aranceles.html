@@ -61,7 +61,7 @@
         #user-icon:hover { background-color: rgba(255,255,255,0.1); }
         #user-dropdown { position: absolute; top: calc(100% + 5px); right: 0; background-color: white; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 150px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; z-index: 1002; }
         #user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
-        #user-dropdown::before { content: ''; position: absolute; top: -6px; left: 12px; right: auto; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid white; }
+        #user-dropdown::before { content: ''; position: absolute; top: -6px; right: 12px; left: auto; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid white; }
         .dropdown-item { padding: 12px 16px; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #eee; display: flex; align-items: center; color: #333; text-decoration: none; }
         .dropdown-item:last-child { border-bottom: none; }
         .dropdown-item:hover { background-color: #f8f9fa; }
@@ -78,18 +78,18 @@
         /* Top-bar layout regions */
         .top-left { width: 64px; display: flex; align-items: center; justify-content: flex-start; }
         .top-center { flex: 1; display: flex; align-items: center; justify-content: center; }
-        .top-right { width: 420px; display: flex; align-items: center; justify-content: flex-end; position: relative; }
+        .top-right { width: auto; display: flex; align-items: center; justify-content: flex-end; position: relative; }
 
         /* Top-search now inline inside the top-bar and expandible on click */
-        .top-search { position: relative; right: auto; top: auto; display: flex; align-items: center; z-index: 1105; transition: width 0.22s ease, opacity 0.18s ease; width: 44px; overflow: visible; }
+        .top-search { position: absolute; left: 30px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; z-index: 1105; transition: width 0.22s ease, opacity 0.18s ease; width: 44px; overflow: visible; flex-direction: row-reverse; }
         .top-search .search-wrapper { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; }
-        .search-toggle-btn { background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; margin-left: 8px; flex: 0 0 auto; }
+        .search-toggle-btn { background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; margin-left: 0; flex: 0 0 auto; }
 
         /* Collapsed state: only the icon (small clickable area). Expanded: white search input inside the bar */
         .top-search #search { width: 0; opacity: 0; padding: 0; border: none; pointer-events: none; transition: width 0.18s ease, opacity 0.18s ease, padding 0.18s ease; box-sizing: border-box; min-width: 0; }
-        .top-search.expanded { width: 360px; }
-        .top-search.expanded .search-wrapper { background-color: #ffffff; padding: 6px; border-radius: 6px; box-shadow: 0 4px 18px rgba(0,0,0,0.18); margin-right: 8px; }
-        .top-search.expanded #search { width: 100%; opacity: 1; padding: 10px 12px; border-radius: 4px; border: none; pointer-events: auto; }
+        .top-search.expanded { width: 300px; }
+        .top-search.expanded .search-wrapper { background-color: #ffffff; padding: 8px 12px; border-radius: 6px 0 0 6px; box-shadow: 0 4px 18px rgba(0,0,0,0.18); margin-right: 0; }
+        .top-search.expanded #search { width: 100%; opacity: 1; padding: 8px 10px; border-radius: 4px; border: none; pointer-events: auto; font-size: 14px; }
         .top-search .clear-btn { background: transparent; border: none; font-size: 14px; margin-left: 8px; cursor: pointer; display: none; }
         .top-search.expanded .clear-btn { display: inline-block; }
 
@@ -109,7 +109,7 @@
         #user-dropdown {
             position: absolute;
             top: calc(100% + 8px);
-            left: 0; /* align to left edge of the user container */
+            right: 0; /* align to right edge of the user container */
             background-color: white;
             border: 1px solid #ddd;
             border-radius: 6px;
@@ -122,6 +122,7 @@
             z-index: 2000;
             overflow: visible;
         }
+        #user-dropdown::before { content: ''; position: absolute; top: -6px; right: 12px; left: auto; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid white; }
         #user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
         #user-icon { margin-left: 8px; }
         .search-wrapper {
@@ -147,7 +148,8 @@
             position: absolute;
             width: 100%;
             top: 100%;
-            left: 0;
+            right: 0;
+            left: auto;
             background-color: white;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -236,8 +238,8 @@
             }
             .top-left { width: 50px; }
             .top-right { width: auto; }
-            .top-search { width: 40px; }
-            .top-search.expanded { width: 280px; }
+            .top-search { left: 15px; }
+            .top-search.expanded { width: 250px; }
             .search-toggle-btn { font-size: 18px; margin-left: 6px; }
             #search { font-size: 14px; }
             #search::placeholder { font-size: 12px; }
@@ -259,8 +261,8 @@
             }
             .top-left { width: 40px; }
             .top-right { width: auto; }
-            .top-search { width: 36px; }
-            .top-search.expanded { width: 100%; max-width: 280px; }
+            .top-search { left: 10px; }
+            .top-search.expanded { width: 100%; max-width: 240px; z-index: 1200; }
             .search-toggle-btn { font-size: 16px; margin-left: 4px; }
             #search { font-size: 13px; padding: 8px 10px; }
             #search::placeholder { font-size: 11px; }
@@ -338,8 +340,8 @@
             #top-bar { height: 48px; padding: 0 8px; }
             #top-bar h1 { font-size: 16px; letter-spacing: 0.3px; }
             .top-left { width: 36px; }
-            .top-search { width: 32px; }
-            .top-search.expanded { width: 100%; max-width: 240px; }
+            .top-search { left: 8px; }
+            .top-search.expanded { width: 100%; max-width: 200px; }
             .search-toggle-btn { font-size: 14px; margin-left: 2px; }
             #search { font-size: 12px; padding: 6px 8px; }
             #user-icon { font-size: 16px; padding: 4px; }
@@ -408,6 +410,21 @@
 
     <div id="top-bar">
         <div class="top-left">
+            <div id="top-search" class="top-search" aria-hidden="true">
+                <div class="search-wrapper">
+                    <input type="text" id="search" placeholder="Buscar por código o descripción..." autocomplete="off">
+                    <button id="clear-search" style="display:none;position:relative;margin-left:8px;background:transparent;border:none;font-size:18px;cursor:pointer;color:#888;">&times;</button>
+                </div>
+                <button id="search-toggle" class="search-toggle-btn" aria-label="Buscar">🔍</button>
+                <ul id="suggestions"></ul>
+            </div>
+        </div>
+
+        <div class="top-center">
+            <h1 id="home-link">SCBMAA</h1>
+        </div>
+
+        <div class="top-right">
             <div id="user-container">
                 <div id="user-icon">👤</div>
                 <div id="user-dropdown">
@@ -419,27 +436,13 @@
                 </div>
             </div>
         </div>
-
-        <div class="top-center">
-            <h1 id="home-link">SCBMAA</h1>
-        </div>
-
-        <div class="top-right">
-            <div id="top-search" class="top-search" aria-hidden="true">
-                <div class="search-wrapper">
-                    <input type="text" id="search" placeholder="Buscar por código o descripción..." autocomplete="off">
-                    <button id="clear-search" style="display:none;position:relative;margin-left:8px;background:transparent;border:none;font-size:18px;cursor:pointer;color:#888;">&times;</button>
-                </div>
-                <button id="search-toggle" class="search-toggle-btn" aria-label="Buscar">🔍</button>
-                <ul id="suggestions"></ul>
-            </div>
-        </div>
     </div>
 
     <div id="main-content" class="sidebar-open">
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <h1 style="margin:0;">Tabla de Aranceles</h1>
-            <button id="export-btn" class="btn btn-sm btn-outline-success" style="display:flex;align-items:center;gap:6px;"><span>💾</span> Exportar tabla</button>
+                <!-- =====  exportar tabla  ===== 
+            <button id="export-btn" class="btn btn-sm btn-outline-success" style="display:flex;align-items:center;gap:6px;"><span>💾</span> </button> -->
         </div>
 
         {% load custom_filters %}
@@ -588,8 +591,18 @@
                         const s = document.getElementById('search');
                         if (s) { s.focus(); }
                         if (typeof showRecent === 'function') showRecent();
+                        // Ocultar logo en móviles cuando se expande el buscador
+                        if (window.innerWidth <= 480) {
+                            homeLink.style.opacity = '0';
+                            homeLink.style.pointerEvents = 'none';
+                        }
                     } else {
                         suggestions.classList.remove('show');
+                        // Mostrar logo cuando se cierra
+                        if (homeLink) {
+                            homeLink.style.opacity = '1';
+                            homeLink.style.pointerEvents = 'auto';
+                        }
                     }
                 });
 

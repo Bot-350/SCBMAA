@@ -59,6 +59,11 @@
             letter-spacing: 2px;
             text-shadow: 2px 2px 4px var(--shadow-medium);
         }
+
+        /* Regiones del top-bar */
+        .top-left { width: 64px; display: flex; align-items: center; justify-content: flex-start; }
+        .top-center { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .top-right { width: auto; display: flex; align-items: center; justify-content: flex-end; position: relative; }
         
         /* Contenedor del usuario con menú desplegable */
         #user-container {
@@ -468,20 +473,27 @@
 
     <!-- Barra superior -->
     <div id="top-bar">
-        <h1>SCBMAA</h1>
-        <div id="user-container">
-            <div id="user-icon" style="color: white;">👤</div>
-            <div id="user-dropdown">
-                <div class="dropdown-item" id="config-btn">
-                    <span class="icon">⚙️</span>
-                    <span>Configuración</span>
-                </div>
-                {% if request.user.is_staff or request.user.is_superuser %}
-                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
-                {% endif %}
-                <div class="dropdown-item logout-item" id="logout-btn">
-                    <span class="icon">🚪</span>
-                    <span>Cerrar Sesión</span>
+        <div class="top-left"></div>
+
+        <div class="top-center">
+            <h1 id="home-link">SCBMAA</h1>
+        </div>
+
+        <div class="top-right">
+            <div id="user-container">
+                <div id="user-icon" style="color: white;">👤</div>
+                <div id="user-dropdown">
+                    <div class="dropdown-item" id="config-btn">
+                        <span class="icon">⚙️</span>
+                        <span>Configuración</span>
+                    </div>
+                    {% if request.user.is_staff or request.user.is_superuser %}
+                    <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
+                    {% endif %}
+                    <div class="dropdown-item logout-item" id="logout-btn">
+                        <span class="icon">🚪</span>
+                        <span>Cerrar Sesión</span>
+                    </div>
                 </div>
             </div>
         </div>

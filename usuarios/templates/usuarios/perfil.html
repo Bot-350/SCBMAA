@@ -63,6 +63,34 @@
             letter-spacing: 2px;
             text-shadow: 2px 2px 4px var(--shadow-medium);
         }
+
+        /* Regiones del top-bar */
+        .top-left { width: 64px; display: flex; align-items: center; justify-content: flex-start; }
+        .top-center { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .top-right { width: auto; display: flex; align-items: center; justify-content: flex-end; position: relative; }
+
+        /* Barra de búsqueda expandible */
+        .top-search { position: absolute; left: 30px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; z-index: 1105; transition: width 0.22s ease, opacity 0.18s ease; width: 44px; overflow: visible; flex-direction: row-reverse; }
+        .top-search .search-wrapper { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; }
+        .search-toggle-btn { background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; margin-left: 0; flex: 0 0 auto; }
+        .top-search #search { width: 0; opacity: 0; padding: 0; border: none; pointer-events: none; transition: width 0.18s ease, opacity 0.18s ease, padding 0.18s ease; box-sizing: border-box; min-width: 0; }
+        .top-search.expanded { width: 300px; }
+        .top-search.expanded .search-wrapper { background-color: #ffffff; padding: 8px 12px; border-radius: 6px 0 0 6px; box-shadow: 0 4px 18px rgba(0,0,0,0.18); margin-right: 0; }
+        .top-search.expanded #search { width: 100%; opacity: 1; padding: 8px 10px; border-radius: 4px; border: none; pointer-events: auto; font-size: 14px; }
+
+        /* Logo centrado */
+        #home-link {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1200;
+            margin: 0;
+            pointer-events: auto;
+            color: var(--white);
+            text-decoration: none;
+            cursor: pointer;
+        }
         
         /* Contenedor del usuario con menú desplegable */
         #user-container {
@@ -401,22 +429,29 @@
     <!-- Overlay para cerrar el menú -->
     <div id="dropdown-overlay"></div>
 
-    <!-- Barra superior - IGUAL QUE LA PRIMERA PÁGINA -->
+    <!-- Barra superior -->
     <div id="top-bar">
-        <h1><a href="{% url 'home' %}" style="color:inherit;text-decoration:none;">SCBMAA</a></h1>
-        <div id="user-container">
-            <div id="user-icon" style="color: white;">👤</div>
-            <div id="user-dropdown">
-                <div class="dropdown-item" id="config-btn">
-                    <span class="icon">⚙️</span>
-                    <span>Configuración</span>
-                </div>
-                {% if request.user.is_staff or request.user.is_superuser %}
-                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
-                {% endif %}
-                <div class="dropdown-item logout-item" id="logout-btn">
-                    <span class="icon">🚪</span>
-                    <span>Cerrar Sesión</span>
+        <div class="top-left"></div>
+
+        <div class="top-center">
+            <h1 id="home-link"><a href="{% url 'home' %}" style="color:inherit;text-decoration:none;">SCBMAA</a></h1>
+        </div>
+
+        <div class="top-right">
+            <div id="user-container">
+                <div id="user-icon" style="color: white;">👤</div>
+                <div id="user-dropdown">
+                    <div class="dropdown-item" id="config-btn">
+                        <span class="icon">⚙️</span>
+                        <span>Configuración</span>
+                    </div>
+                    {% if request.user.is_staff or request.user.is_superuser %}
+                    <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
+                    {% endif %}
+                    <div class="dropdown-item logout-item" id="logout-btn">
+                        <span class="icon">🚪</span>
+                        <span>Cerrar Sesión</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -465,12 +500,58 @@
     </div>
 
     <script>
-        // Funcionalidad del menú desplegable del usuario - IGUAL QUE LA PRIMERA PÁGINA
+        // Funcionalidad del menú desplegable del usuario
         const userIcon = document.getElementById('user-icon');
         const userDropdown = document.getElementById('user-dropdown');
         const dropdownOverlay = document.getElementById('dropdown-overlay');
         const logoutBtn = document.getElementById('logout-btn');
         const configBtn = document.getElementById('config-btn');
+        const searchToggle = document.getElementById('search-toggle');
+        const topSearch = document.getElementById('top-search');
+        const homeLink = document.getElementById('home-link');
+        
+        // Funcionalidad de búsqueda expandible
+        if (searchToggle && topSearch) {
+            searchToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const expanded = topSearch.classList.toggle('expanded');
+                topSearch.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+                if (expanded) {
+                    const s = document.getElementById('search');
+                    if (s) { s.focus(); }
+                    // Ocultar logo en móviles cuando se expande el buscador
+                    if (window.innerWidth <= 480) {
+                        homeLink.style.opacity = '0';
+                        homeLink.style.pointerEvents = 'none';
+                    }
+                } else {
+                    // Mostrar logo cuando se cierra
+                    if (homeLink) {
+                        homeLink.style.opacity = '1';
+                        homeLink.style.pointerEvents = 'auto';
+                    }
+                }
+            });
+
+            // Close when clicking outside the search area
+            document.addEventListener('click', function(e) {
+                if (!topSearch.contains(e.target) && !searchToggle.contains(e.target)) {
+                    if (topSearch.classList.contains('expanded')) {
+                        topSearch.classList.remove('expanded');
+                        topSearch.setAttribute('aria-hidden', 'true');
+                    }
+                }
+            });
+
+            // Close with Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && topSearch.classList.contains('expanded')) {
+                    topSearch.classList.remove('expanded');
+                    topSearch.setAttribute('aria-hidden', 'true');
+                    if (searchToggle) searchToggle.focus();
+                }
+            });
+        }
         
         // Mostrar/ocultar menú desplegable
         userIcon.addEventListener('click', function(e) {

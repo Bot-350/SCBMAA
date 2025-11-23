@@ -3,15 +3,22 @@
 
 {% block content %}
 <div id="top-bar">
-    <h1 id="home-link">SCBMAA</h1>
-    <div id="user-container">
-        <div id="user-icon">👤</div>
-        <div id="user-dropdown">
-            <a href="{% url 'usuarios:perfil' %}" class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></a>
-            {% if request.user.is_staff or request.user.is_superuser %}
-            <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
-            {% endif %}
-            <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
+    <div class="top-left"></div>
+
+    <div class="top-center">
+        <h1 id="home-link">SCBMAA</h1>
+    </div>
+
+    <div class="top-right">
+        <div id="user-container">
+            <div id="user-icon">👤</div>
+            <div id="user-dropdown">
+                <a href="{% url 'usuarios:perfil' %}" class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></a>
+                {% if request.user.is_staff or request.user.is_superuser %}
+                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
+                {% endif %}
+                <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
+            </div>
         </div>
     </div>
 </div>
@@ -59,9 +66,24 @@ body {
     text-shadow: 2px 2px 4px var(--shadow-medium);
     transition: opacity 0.3s ease; 
 }
+
+/* Regiones del top-bar */
+.top-left { width: 64px; display: flex; align-items: center; justify-content: flex-start; }
+.top-center { flex: 1; display: flex; align-items: center; justify-content: center; }
+.top-right { width: auto; display: flex; align-items: center; justify-content: flex-end; position: relative; }
+
+/* Logo centrado */
 #home-link {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1200;
+    margin: 0;
+    pointer-events: auto;
     color: #ffffff !important;
     text-decoration: none;
+    cursor: pointer;
 }
 #user-container { margin-left: auto; position: relative; }
 #user-icon { color: white; font-size: 24px; cursor: pointer; padding: 8px; border-radius: 50%; transition: background-color 0.3s ease; display: flex; align-items: center; justify-content: center; filter: brightness(0) invert(1); }
