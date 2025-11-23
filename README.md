@@ -47,7 +47,7 @@ python manage.py createsuperuser
 
 # Ejecutar el servidor
 python manage.py runserver
-Abrir en el navegador: http://127.0.0.1:8000
+Abrir en el navegador: http://127.0.0.1:8000/
 
 📂 Estructura del Proyecto
 bash
