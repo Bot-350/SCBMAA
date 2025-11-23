@@ -289,7 +289,7 @@
                     <label for="{{ form.new_password1.id_for_label }}">Nueva contraseña:</label>
                     {{ form.new_password1 }}
                     {% if form.new_password1.help_text %}
-                        <div class="help-text">{{ form.new_password1.help_text }}</div>
+                        <div class="help-text">{{ form.new_password1.help_text|safe }}</div>
                     {% endif %}
                     {% if form.new_password1.errors %}
                         <div class="form-errors">
@@ -315,7 +315,7 @@
                 <button type="submit" class="btn">
                     Cambiar Contraseña
                 </button>
-                <a href="{% url 'usuarios:profile' %}" class="btn btn-secondary">
+                <a href="{% url 'usuarios:perfil' %}" class="btn btn-secondary">
                     ← Cancelar
                 </a>
             </form>

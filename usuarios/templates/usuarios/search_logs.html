@@ -83,8 +83,9 @@
                 <a href="{% url 'usuarios:perfil' %}" class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></a>
                 {# Solo mostrar el enlace a logs si el usuario es admin #}
                 {% if request.user.is_staff or request.user.is_superuser %}
-                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
+                <a href="{% url 'usuarios:crear_usuario' %}" class="dropdown-item"><span class="icon">➕</span><span>Añadir usuario</span></a>
                 {% endif %}
+                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
                 <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
             </div>
         </div>

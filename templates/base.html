@@ -18,13 +18,21 @@
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'usuarios:perfil' %}">Perfil</a>
+                            <a class="nav-link" href="{% url 'usuarios:perfil' %}">⚙️ Configuración</a>
+                        </li>
+                        {% if user.is_staff or user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'usuarios:crear_usuario' %}">➕ Añadir usuario</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'usuarios:search_logs' %}">Search Logs</a>
+                            <a class="nav-link" href="{% url 'usuarios:search_logs' %}">Historial</a>
                         </li>
+                        {% endif %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'usuarios:logout' %}">Cerrar sesión</a>
+                            <form method="post" action="{% url 'usuarios:logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-link nav-link p-0">Cerrar sesión</button>
+                            </form>
                         </li>
                     {% else %}
                         <li class="nav-item">
@@ -48,13 +56,7 @@
     {% block content %}
     {% endblock %}
 
-    {% if not request.user.is_authenticated %}
-    <script>
-        if (confirm("La sesión se ha cerrado. ¿Desea salir?")) {
-            window.location.href = "/logout/";
-        }
-    </script>
-    {% endif %}
+    {# Eliminado script innecesario que redirigía a /logout/ cuando el usuario no estaba autenticado. #}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

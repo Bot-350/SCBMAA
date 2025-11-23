@@ -1,0 +1,518 @@
+{% extends 'base.html' %}
+{% load tz %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        /* Color del encabezado de tablas usado en `tabla_aranceles.html` */
+        --table-header-color: #2c3e50; /* color fijo para la barra superior */
+
+        /* Tonos más suaves para el resto de la UI */
+        --primary-dark: #4a7ea0; /* más suave que el anterior azul fuerte */
+        --primary-darker: #38607a;
+        --primary-color: #6fa8d6;
+        --primary-light: #a9d0ee;
+        --accent-blue: #bcdff5;
+        --light-blue: #d9eefc;
+        --celeste: #c7e6f6;
+        --success-color: #2ecc71;
+        --danger-color: #e74c3c;
+        --warning-color: #f39c12;
+        --shadow-heavy: rgba(13, 45, 92, 0.18);
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        /* Fondo más suave y claro para que la página no se vea tan oscura */
+        background: linear-gradient(180deg, #f6fbff 0%, #eef7fb 40%, #f8fbfd 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding: 20px;
+        color: #223344;
+    }
+
+    /* La barra superior usa el mismo color que el encabezado de tablas */
+    #top-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 70px;
+        background: var(--table-header-color);
+        z-index: 1001;
+        display: flex;
+        align-items: center;
+        padding: 0 30px;
+        box-shadow: 0 4px 20px var(--shadow-heavy);
+        backdrop-filter: blur(6px);
+    }
+
+    #top-bar h1 {
+        color: #fff;
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        cursor: pointer;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px var(--shadow-heavy);
+        transition: opacity 0.3s ease;
+        text-decoration: none;
+    }
+
+    .top-left { width: 64px; display: flex; align-items: center; justify-content: flex-start; }
+    .top-center { flex: 1; display: flex; align-items: center; justify-content: center; }
+    .top-right { width: auto; display: flex; align-items: center; justify-content: flex-end; position: relative; }
+
+    #home-link {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1200;
+        margin: 0;
+        pointer-events: auto;
+        color: #fff;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    #user-container { margin-left: auto; position: relative; }
+    #user-icon { color: white; font-size: 24px; cursor: pointer; padding: 8px; border-radius: 50%; transition: background-color 0.3s ease; display: flex; align-items: center; justify-content: center; filter: brightness(0) invert(1); }
+    #user-icon:hover { background-color: rgba(255,255,255,0.1); }
+    #user-dropdown { position: absolute; top: calc(100% + 5px); right: 0; background-color: white; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 150px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; z-index: 1002; }
+    #user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+    #user-dropdown::before { content: ''; position: absolute; top: -8px; right: 12px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid white; }
+    .dropdown-item { padding: 12px 16px; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #eee; display: flex; align-items: center; color: #333; text-decoration: none; }
+    .dropdown-item:last-child { border-bottom: none; }
+    .dropdown-item:hover { background-color: #f8f9fa; }
+    .dropdown-item .icon { margin-right: 10px; font-size: 16px; }
+    .logout-item { color: #dc3545; }
+    .logout-item:hover { background-color: #fdf2f2; }
+
+    .container {
+        margin-top: 100px !important;
+        width: 100%;
+        max-width: 600px;
+    }
+
+    .form-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 12px 30px rgba(13, 45, 92, 0.12);
+        padding: 40px;
+        animation: slideUp 0.5s ease-out;
+        border-top: 5px solid var(--primary-light);
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .form-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .form-header h2 {
+        color: var(--primary-darker);
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    /* Estilo para el signo +: usar mismo color que la barra superior */
+    .plus-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--table-header-color);
+        color: white;
+        font-weight: 800;
+        box-shadow: 0 6px 18px rgba(44,62,80,0.12);
+        font-size: 18px;
+    }
+
+    .form-header p {
+        color: var(--primary-color);
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--primary-dark);
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid var(--light-blue);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        transition: all 0.3s ease;
+        background: linear-gradient(to bottom, #f0f8ff 0%, #e6f2ff 100%);
+        color: var(--primary-dark);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--primary-light);
+        background: linear-gradient(to bottom, #ffffff 0%, #f0f8ff 100%);
+        box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.15);
+    }
+
+    .form-group input::placeholder {
+        color: #85c1e2;
+    }
+
+    .form-text {
+        display: block;
+        margin-top: 6px;
+        color: #2980b9;
+        font-size: 12px;
+    }
+
+    .password-requirements {
+        background: linear-gradient(to bottom, #eff7ff 0%, #e8f1f9 100%);
+        padding: 12px;
+        border-radius: 6px;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #1a5490;
+        border-left: 4px solid var(--primary-light);
+    }
+
+    .password-requirements ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .password-requirements li {
+        margin: 4px 0;
+    }
+
+    .alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        animation: slideDown 0.3s ease-out;
+        border-left: 4px solid;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+    }
+
+    .invalid-feedback {
+        color: var(--danger-color);
+        font-size: 12px;
+        margin-top: 6px;
+        display: block;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+    }
+
+    button[type="submit"],
+    .btn-submit {
+        flex: 1;
+        padding: 14px 20px;
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 15px rgba(41, 128, 185, 0.3);
+    }
+
+    button[type="submit"]:hover,
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(41, 128, 185, 0.4);
+        background: linear-gradient(135deg, var(--accent-blue) 0%, var(--primary-light) 100%);
+    }
+
+    button[type="submit"]:active,
+    .btn-submit:active {
+        transform: translateY(0);
+    }
+
+    .btn-secondary {
+        flex: 1;
+        padding: 14px 20px;
+        background: white;
+        color: var(--primary-dark);
+        border: 2px solid var(--light-blue);
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-secondary:hover {
+        background: var(--light-blue);
+        border-color: var(--primary-light);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    @media (max-width: 600px) {
+        .form-container {
+            padding: 25px;
+        }
+
+        .form-header h2 {
+            font-size: 22px;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .button-group {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div id="top-bar">
+    <div class="top-left"></div>
+    <div class="top-center">
+        <h1 id="home-link" onclick="window.location.href='/'">SCBMAA</h1>
+    </div>
+    <div class="top-right">
+        <div id="user-container">
+            <div id="user-icon">👤</div>
+            <div id="user-dropdown">
+                <a href="{% url 'usuarios:perfil' %}" class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></a>
+                {% if request.user.is_staff or request.user.is_superuser %}
+                <a href="{% url 'usuarios:crear_usuario' %}" class="dropdown-item"><span class="icon">➕</span><span>Añadir usuario</span></a>
+                {% endif %}
+                <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
+                <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userIcon = document.getElementById('user-icon');
+        const userDropdown = document.getElementById('user-dropdown');
+        userIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+        });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#user-container')) {
+                userDropdown.classList.remove('show');
+            }
+        });
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function() {
+                window.location.href = "{% url 'usuarios:logout' %}";
+            });
+        }
+    });
+</script>
+
+<div class="container">
+    <div class="form-container">
+        <div class="form-header">
+            <h2><span class="plus-icon">+</span> Crear Nuevo Usuario</h2>
+            <p>Completa el formulario para agregar un nuevo usuario al sistema</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">{{ form.username.label }}{% if form.username.field.required %}<span style="color:var(--danger-color); margin-left:6px;">*</span>{% endif %}</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.username.errors %}
+                            {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if form.username.help_text %}
+                    <small class="form-text">{{ form.username.help_text|safe }}</small>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">{{ form.email.label }}{% if not form.email.field.required %}<small class="form-text" style="display:inline-block;margin-left:8px;color:#6c757d;font-weight:600">(Opcional)</small>{% else %}<span style="color:var(--danger-color); margin-left:6px;">*</span>{% endif %}</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.email.errors %}
+                            {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}{% if not form.first_name.field.required %}<small class="form-text" style="display:inline-block;margin-left:8px;color:#6c757d;font-weight:600">(Opcional)</small>{% endif %}</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.first_name.errors %}
+                                {{ error }}<br>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}{% if not form.last_name.field.required %}<small class="form-text" style="display:inline-block;margin-left:8px;color:#6c757d;font-weight:600">(Opcional)</small>{% endif %}</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.last_name.errors %}
+                                {{ error }}<br>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}{% if form.password1.field.required %}<span style="color:var(--danger-color); margin-left:6px;">*</span>{% endif %}</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.password1.errors %}
+                            {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if form.password1.help_text %}
+                    <div class="password-requirements">
+                        {{ form.password1.help_text|safe }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}{% if form.password2.field.required %}<span style="color:var(--danger-color); margin-left:6px;">*</span>{% endif %}</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.password2.errors %}
+                            {{ error }}<br>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if form.password2.help_text %}
+                    <small class="form-text">{{ form.password2.help_text|safe }}</small>
+                {% endif %}
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-submit">
+                    <span>✓</span> Crear Usuario
+                </button>
+                <a href="{% url 'usuarios:search_logs' %}" class="btn-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+{% endblock %}

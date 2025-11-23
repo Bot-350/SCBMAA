@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -27,6 +28,85 @@
             padding: 0; 
             background-color: #f4f7f6; 
         }
+        /* Widget actualización (esquina inferior derecha) */
+        .update-widget {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            left: auto;
+            z-index: 2100;
+            font-family: inherit;
+            touch-action: manipulation;
+        }
+
+        .update-toggle {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            background-color: var(--primary-dark) !important; /* forzar fondo azul oscuro */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+            cursor: pointer;
+            border: 2px solid #ffffff !important; /* forzar borde blanco */
+            padding: 6px;
+        }
+
+        .update-toggle svg { width: 28px; height: 28px; display: block; }
+        .update-toggle svg path { fill: #ffffff !important; }
+
+        .update-panel {
+            /* Position above and to the left of the toggle (so it "grows" left/up from the icon at bottom-right) */
+            position: absolute;
+            right: 0;
+            bottom: 72px; /* sits above the 56px button + small gap */
+            width: 320px;
+            max-width: calc(100vw - 48px);
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,245,245,0.98));
+            color: var(--primary-dark);
+            border-radius: 10px;
+            box-shadow: 0 18px 60px rgba(0,0,0,0.45);
+            overflow: hidden;
+            transform-origin: right bottom;
+            transform: translateY(8px) scaleY(0);
+            transition: transform 220ms cubic-bezier(.2,.9,.3,1), opacity 180ms;
+            opacity: 0;
+            pointer-events: none;
+            text-align: left;
+        }
+
+        .update-panel.open {
+            transform: translateY(0) scaleY(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .update-panel .header {
+            padding: 12px 14px;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        /* small caret pointing to the toggle button */
+        .update-panel::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            right: 18px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid rgba(245,245,245,0.98);
+            filter: drop-shadow(0 1px 0 rgba(0,0,0,0.04));
+        }
+
+        .update-panel .body { padding: 12px 14px; font-size: 13px; color: #333; }
+
+        .update-panel .date { font-weight: 600; color: var(--primary-dark); }
+        .last-update-icon { width: 16px; height: 16px; vertical-align: middle; margin-right: 8px; display: inline-block; color: var(--primary-dark); }
+        .last-update-icon svg { width: 100%; height: 100%; display: block; }
         #top-bar { 
             position: fixed; 
             top: 0; 
@@ -419,6 +499,10 @@
             }
             #suggestions li { height: 40px; font-size: 10px; }
             #suggestions li:first-child { height: 24px; font-size: 9px; }
+        @media (max-width: 480px) {
+            .update-panel { width: 200px; }
+            .update-widget { right: 12px; bottom: 12px; }
+        }
         }
 
         /* Ultra-móviles (menos de 360px) */
@@ -516,6 +600,7 @@
                 <div id="user-dropdown">
                     <a href="{% url 'usuarios:perfil' %}" class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></a>
                     {% if request.user.is_staff or request.user.is_superuser %}
+                    <a href="{% url 'usuarios:crear_usuario' %}" class="dropdown-item"><span class="icon">➕</span><span>Añadir usuario</span></a>
                     <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
                     {% endif %}
                     <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
@@ -621,10 +706,10 @@
                                                 {% if item.fecha_ultima_modificacion %}
                                                     {% with dias_desde_modificacion=item.fecha_ultima_modificacion|timesince %}
                                                         {% if item.fecha_ultima_modificacion > fecha_hace_30_dias %}
-                                                            <div class="alert-icon" title="Modificado hace poco">
+                                                            <div class="alert-icon" title="Modificado hace poco" data-fecha-completa="{{ item.fecha_ultima_modificacion|date:'c' }}">
                                                                 !
                                                                 <div class="alert-tooltip">
-                                                                    Modificado: {{ item.fecha_ultima_modificacion|date:"d/m/Y" }}
+                                                                    Modificado: {{ item.fecha_ultima_modificacion|date:"d/m/Y H:i" }}
                                                                 </div>
                                                             </div>
                                                         {% endif %}
@@ -744,13 +829,18 @@
             let searchTimeout;
             let allItems = [];
             let isDataLoaded = false;
+            // Cuando el usuario selecciona una sugerencia, la lista se oculta.
+            // Esta bandera permite reabrir las sugerencias si vuelve a hacer foco/clic en el input.
+            let suggestionsHiddenBySelection = false;
             
             // Configuración para búsquedas recientes
-            const RECENT_STORAGE_KEY = 'recent_searches';
+            // Usar una clave por usuario para que las búsquedas recientes no se compartan entre cuentas
+            const JS_USERNAME = '{{ request.user.username|default:""|escapejs }}';
+            const RECENT_STORAGE_KEY = JS_USERNAME ? `recent_searches_${JS_USERNAME}` : 'recent_searches_public';
             const MAX_SHOW = 7;
             const MAX_STORE = 25;
             // Historial separado para términos que el usuario escribe y confirma con Enter
-            const SEARCH_STORAGE_KEY = 'search_terms';
+            const SEARCH_STORAGE_KEY = JS_USERNAME ? `search_terms_${JS_USERNAME}` : 'search_terms_public';
             const MAX_SEARCH_STORE = 25;
 
             // Funciones para manejar búsquedas recientes
@@ -789,6 +879,18 @@
 
             function showRecent() {
                 const searches = loadRecent();
+                // Asegurar que el top-search esté expandido cuando mostramos recientes
+                try {
+                    if (topSearch && !topSearch.classList.contains('expanded')) {
+                        topSearch.classList.add('expanded');
+                        topSearch.setAttribute('aria-hidden', 'false');
+                        if (window.innerWidth <= 480 && homeLink) {
+                            homeLink.style.opacity = '0';
+                            homeLink.style.pointerEvents = 'none';
+                        }
+                    }
+                } catch(e) { /* ignore if DOM not ready */ }
+
                 suggestions.innerHTML = '<li style="padding: 8px 12px; font-size: 12px; color: #666; background: #f8f9fa; border-bottom: 1px solid #eee;">Búsquedas recientes</li>';
 
                 if (searches.length > 0) {
@@ -899,6 +1001,8 @@
                         suggestions.appendChild(li);
                     });
                     suggestions.classList.add('show');
+                    // Asegurar que las sugerencias sean visibles y el input esté enfocado
+                    try { if (searchInput) searchInput.focus(); } catch(e) {}
                 } else {
                     suggestions.innerHTML = '<li class="no-results">No hay búsquedas recientes</li>';
                     suggestions.classList.add('show');
@@ -1246,8 +1350,11 @@
                             // Guardar en recientes y registrar
                             saveRecent(term);
                             logSearch(term);
-                            // Cerrar las sugerencias al hacer click
+                            // Al seleccionar una sugerencia, ocultar las sugerencias.
                             suggestions.classList.remove('show');
+                            // Marcar que se cerraron por selección para que al volver a
+                            // hacer foco/clic en el input se puedan mostrar de nuevo.
+                            suggestionsHiddenBySelection = true;
                         });
                         suggestions.appendChild(li);
                     });
@@ -1329,10 +1436,32 @@
                 // Mantener un intento adicional por si el DOM no estaba completamente listo
                 setTimeout(loadTableData, 1000); 
 
-                // Mostrar búsquedas recientes al hacer click si está vacío
+                // Mostrar búsquedas recientes al hacer click si está vacío.
+                // Si las sugerencias fueron ocultadas por una selección, reabrirlas al hacer click/foco.
                 searchInput.addEventListener('click', () => {
+                    if (suggestionsHiddenBySelection) {
+                        if (!searchInput.value.trim()) {
+                            showRecent();
+                        } else {
+                            performSearch(searchInput.value);
+                        }
+                        suggestionsHiddenBySelection = false;
+                        return;
+                    }
                     if (!searchInput.value.trim()) {
                         showRecent();
+                    }
+                });
+
+                // Reabrir sugerencias si el input recupera el foco tras una selección previa
+                searchInput.addEventListener('focus', () => {
+                    if (suggestionsHiddenBySelection) {
+                        if (!searchInput.value.trim()) {
+                            showRecent();
+                        } else {
+                            performSearch(searchInput.value);
+                        }
+                        suggestionsHiddenBySelection = false;
                     }
                 });
 
@@ -1343,7 +1472,12 @@
                         showRecent();
                         return;
                     }
-                    suggestions.classList.remove('show');
+                    // Mantener las sugerencias visibles mientras el usuario escribe
+                    // y mostrar un indicador de búsqueda hasta que lleguen los resultados.
+                    try {
+                        suggestions.classList.add('show');
+                        suggestions.innerHTML = '<li class="loading" style="padding:8px 12px; color:#666;">Buscando...</li>';
+                    } catch(err) { /* noop si DOM cambia */ }
                     searchTimeout = setTimeout(() => performSearch(e.target.value), 350);
                 });
 
@@ -1371,10 +1505,78 @@
                 //    }
                 //});
             }
+            // Widget de actualizacion: añadir icono en esquina inferior derecha (solo en esta página)
+            (function() {
+                function formatSpanishDate(d) {
+                    try {
+                        return d.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+                    } catch(e) {
+                        return d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+                    }
+                }
+
+                const widget = document.createElement('div');
+                widget.className = 'update-widget';
+                widget.innerHTML = `
+                    <button class="update-toggle" id="update-toggle" aria-expanded="false" aria-controls="update-panel" title="Última actualización">
+                        <!-- SVG embebido como data URI para evitar problemas de carga estática -->
+                        <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 0-3.1 6.6'/%3E%3Cpath d='M21 3v6h-6'/%3E%3C/g%3E%3C/svg%3E" alt="Última actualización" style="width:28px;height:28px;display:block;" />
+                    </button>
+                    <div class="update-panel" id="update-panel" role="region" aria-hidden="true">
+                        <div class="header">Actualización</div>
+                            <div class="body"><span class="last-update-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                                    <path fill="currentColor" d="M12 1a11 11 0 1 0 11 11A11.013 11.013 0 0 0 12 1zm1 12.59V7a1 1 0 0 0-2 0v6a1 1 0 0 0 .52.87l3.5 2A1 1 0 0 0 16 16.5z"/>
+                                </svg>
+                            </span>Última actualización: <span class="date" id="update-date"></span></div>
+                    </div>
+                `;
+                document.body.appendChild(widget);
+
+                const toggle = document.getElementById('update-toggle');
+                const panel = document.getElementById('update-panel');
+                const dateSpan = document.getElementById('update-date');
+                if (dateSpan) {
+                    // Buscar en la tabla la última fecha disponible en los elementos con data-fecha-completa
+                    try {
+                        const nodes = Array.from(document.querySelectorAll('[data-fecha-completa]'));
+                        let latest = null;
+                        nodes.forEach(n => {
+                            const v = n.getAttribute('data-fecha-completa');
+                            if (!v) return;
+                            const d = new Date(v);
+                            if (isNaN(d)) return;
+                            if (!latest || d > latest) latest = d;
+                        });
+                        if (latest) {
+                            // Mostrar fecha y hora en formato español detallado
+                            try {
+                                dateSpan.textContent = latest.toLocaleString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            } catch(e) {
+                                dateSpan.textContent = latest.getDate() + '/' + (latest.getMonth()+1) + '/' + latest.getFullYear() + ' ' + latest.getHours() + ':' + String(latest.getMinutes()).padStart(2,'0');
+                            }
+                        } else {
+                            dateSpan.textContent = formatSpanishDate(new Date());
+                        }
+                    } catch(err) {
+                        dateSpan.textContent = formatSpanishDate(new Date());
+                    }
+                }
+
+                function openPanel() { panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); toggle.setAttribute('aria-expanded', 'true'); }
+                function closePanel() { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); toggle.setAttribute('aria-expanded', 'false'); }
+
+                toggle.addEventListener('click', function(e) { e.stopPropagation(); if (panel.classList.contains('open')) closePanel(); else openPanel(); });
+                document.addEventListener('click', function(e) { if (!widget.contains(e.target)) closePanel(); });
+                document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closePanel(); });
+            })();
+
             if (clearSearchBtn && searchInput) {
                 clearSearchBtn.addEventListener('click', function() {
                     searchInput.value = '';
-                    suggestions.classList.remove('show');
+                    // Mostrar inmediatamente las búsquedas recientes al vaciar la barra
+                    if (typeof showRecent === 'function') showRecent();
+                    suggestions.classList.add('show');
                     clearSearchBtn.style.display = 'none';
                     searchInput.focus();
                 });
