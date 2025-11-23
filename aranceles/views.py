@@ -2,10 +2,12 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from .models import Seccion, Partida, Subpartida # Nota: Django importa Nota automáticamente si es necesario, pero es bueno ser explícito
+from .models import Seccion, Partida, Subpartida, RegistroCambio
 from usuarios.models import SearchLog
 from django.db.models import Avg, Max, Min, Count
 from .models import Capitulo
+from datetime import timedelta
+from django.utils import timezone
 
 @login_required
 def tabla_aranceles(request):
@@ -14,15 +16,35 @@ def tabla_aranceles(request):
     
     Se ha modificado para usar prefetch_related de forma anidada, cargando
     las notas de cada sección y cada capítulo en consultas optimizadas.
+    
+    Enriquece cada subpartida con su fecha de última modificación desde RegistroCambio.
     """
+    # Calcular fecha hace 30 días
+    fecha_hace_30_dias = timezone.now() - timedelta(days=30)
+    
     secciones = Seccion.objects.prefetch_related(
-        'notas',                          # ¡AÑADIDO! Carga todas las notas de esta sección.
-        'capitulos__notas',               # ¡AÑADIDO! Carga todas las notas de cada capítulo.
-        'capitulos__partidas__subpartidas'  # Mantiene la carga eficiente de partidas y subpartidas.
+        'notas',
+        'capitulos__notas',
+        'capitulos__partidas__subpartidas'
     ).all()
     
+    # Enriquecer subpartidas con fecha de última modificación desde RegistroCambio
+    for seccion in secciones:
+        for capitulo in seccion.capitulos.all():
+            for partida in capitulo.partidas.all():
+                for subpartida in partida.subpartidas.all():
+                    # Obtener el último registro de cambio para esta subpartida
+                    ultimo_cambio = RegistroCambio.objects.filter(
+                        modelo='Subpartida',
+                        objeto_id=subpartida.id
+                    ).order_by('-fecha').first()
+                    
+                    # Asignar dinámicamente como atributo (no es campo de BD)
+                    subpartida.fecha_ultima_modificacion = ultimo_cambio.fecha if ultimo_cambio else None
+    
     context = {
-        'secciones': secciones
+        'secciones': secciones,
+        'fecha_hace_30_dias': fecha_hace_30_dias
     }
     return render(request, 'arancel/tabla_aranceles.html', context)
 

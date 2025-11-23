@@ -213,6 +213,92 @@
             50%  { background-color: #FFFF33; }
             100% { background-color: #FFFF00; }
         }
+
+        /* Estilo para el ícono de alerta de modificación reciente */
+        .alert-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 14px;
+            height: 14px;
+            background-color: #FFC107;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .alert-icon:hover {
+            background-color: #FFB300;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Tooltip */
+        .alert-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            margin-bottom: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .alert-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+        }
+
+        .alert-icon:hover .alert-tooltip {
+            opacity: 1;
+            visibility: visible;
+            bottom: calc(100% + 8px);
+        }
+
+        /* Celda de código con posición relativa para el icono */
+        td.text-left:first-child {
+            position: relative;
+        }
+        
+        /* En móviles, el icono es inline */
+        @media (max-width: 480px) {
+            .alert-icon {
+                position: static !important;
+                width: 10px !important;
+                height: 10px !important;
+                font-size: 8px !important;
+                margin-left: 4px !important;
+                display: inline-flex !important;
+                vertical-align: middle;
+                box-shadow: none !important;
+                background-color: #FFC107;
+                border-radius: 50%;
+                align-items: center;
+                justify-content: center;
+                color: #333;
+                cursor: pointer;
+            }
+        }
         .partida-row td { background-color: #3498db; color: white; font-weight: bold; border-top: 2px solid #5f81a3 !important; }
         .titulo-row td { background-color: #aed6f1; color: #307097; font-style: italic; }
         .subpartida-descripcion { padding-left: 30px !important; }
@@ -531,7 +617,20 @@
                                         </tr>
                                     {% else %}
                                         <tr class="subpartida-row" data-codigo="{{ item.codigo }}" data-descripcion="{{ item.descripcion }}">
-                                            <td class="text-left">{{ item.codigo }}</td>
+                                            <td class="text-left">{{ item.codigo }}
+                                                {% if item.fecha_ultima_modificacion %}
+                                                    {% with dias_desde_modificacion=item.fecha_ultima_modificacion|timesince %}
+                                                        {% if item.fecha_ultima_modificacion > fecha_hace_30_dias %}
+                                                            <div class="alert-icon" title="Modificado hace poco">
+                                                                !
+                                                                <div class="alert-tooltip">
+                                                                    Modificado: {{ item.fecha_ultima_modificacion|date:"d/m/Y" }}
+                                                                </div>
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                {% endif %}
+                                            </td>
                                             <td class="text-left subpartida-descripcion">{{ item.descripcion }}</td>
                                             
                                             <!-- ===== BLOQUE 3 CORREGIDO: GA% Y CELDAS VACÍAS ===== -->
@@ -566,6 +665,20 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // ===== MANEJADOR DE ALERTAS DE MODIFICACIÓN RECIENTE =====
+            const alertIcons = document.querySelectorAll('.alert-icon');
+            alertIcons.forEach(icon => {
+                icon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const fechaCompleta = this.getAttribute('data-fecha-completa');
+                    if (fechaCompleta) {
+                        alert('Última actualización:\n' + fechaCompleta);
+                    }
+                });
+                // Cambiar cursor a pointer
+                icon.style.cursor = 'pointer';
+            });
+
             const toggleBtn = document.getElementById('toggle-btn');
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('main-content');
