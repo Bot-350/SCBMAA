@@ -1537,29 +1537,21 @@
                 const panel = document.getElementById('update-panel');
                 const dateSpan = document.getElementById('update-date');
                 if (dateSpan) {
-                    // Buscar en la tabla la última fecha disponible en los elementos con data-fecha-completa
-                    try {
-                        const nodes = Array.from(document.querySelectorAll('[data-fecha-completa]'));
-                        let latest = null;
-                        nodes.forEach(n => {
-                            const v = n.getAttribute('data-fecha-completa');
-                            if (!v) return;
-                            const d = new Date(v);
-                            if (isNaN(d)) return;
-                            if (!latest || d > latest) latest = d;
-                        });
-                        if (latest) {
-                            // Mostrar fecha y hora en formato español detallado
+                    // Usar la fecha de la última importación pasada desde el contexto de Django
+                    var fechaUltimaImportacion = "{{ fecha_ultima_importacion|date:'Y-m-d H:i:s' }}";
+                    if (fechaUltimaImportacion) {
+                        var d = new Date(fechaUltimaImportacion.replace(' ', 'T'));
+                        if (!isNaN(d)) {
                             try {
-                                dateSpan.textContent = latest.toLocaleString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                dateSpan.textContent = d.toLocaleString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                             } catch(e) {
-                                dateSpan.textContent = latest.getDate() + '/' + (latest.getMonth()+1) + '/' + latest.getFullYear() + ' ' + latest.getHours() + ':' + String(latest.getMinutes()).padStart(2,'0');
+                                dateSpan.textContent = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
                             }
                         } else {
-                            dateSpan.textContent = formatSpanishDate(new Date());
+                            dateSpan.textContent = fechaUltimaImportacion;
                         }
-                    } catch(err) {
-                        dateSpan.textContent = formatSpanishDate(new Date());
+                    } else {
+                        dateSpan.textContent = 'Sin importaciones recientes';
                     }
                 }
 

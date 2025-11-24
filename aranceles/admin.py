@@ -61,7 +61,6 @@ class StyledExportAdmin(ImportExportModelAdmin, BaseLoggedAdmin):
         workbook = openpyxl.Workbook()
         sheet = workbook.active
         sheet.title = 'Tabla Aranceles'
-        
         # Headers principales
         headers = [
             'CÓDIGO', 'CÓDIGO PARTIDA', 'DESCRIPCIÓN', 'GA %', 'ICE/IEHD', 'UNIDAD DE MEDIDA', 'DESPACHO EN FRONTERA',
@@ -69,12 +68,23 @@ class StyledExportAdmin(ImportExportModelAdmin, BaseLoggedAdmin):
             'CAN ACE 36 ACE 47 VEN', 'ACE 22 Chi', 'ACE 22 Prot', 'ACE 66 MEXICO', 'ES TÍTULO'
         ]
         sheet.append(headers)
+
+        # Colores azulados
+        header_fill = PatternFill(start_color="1976D2", end_color="1976D2", fill_type="solid")  # Azul fuerte
+        alt_fill_1 = PatternFill(start_color="F5F8FD", end_color="F5F8FD", fill_type="solid")  # Azul muy suave
+        alt_fill_2 = PatternFill(start_color="E3F2FD", end_color="E3F2FD", fill_type="solid")  # Azul claro
+        titulo_fill = PatternFill(start_color="90CAF9", end_color="90CAF9", fill_type="solid")  # Azul destacado
+
+        # Encabezados con color y negrita
         for cell in sheet[1]:
             cell.font = Font(bold=True, color="FFFFFF")
-            cell.fill = PatternFill(start_color="2C3E50", end_color="2C3E50", fill_type="solid")
+            cell.fill = header_fill
 
         # Exportar en el orden exacto del queryset (ordenado por 'orden')
-        for obj in queryset:
+        for idx, obj in enumerate(queryset, start=2):
+            # Marcar como título intermedio si el código empieza por '_H_'
+            es_titulo = obj.codigo.startswith('_H_') or obj.es_titulo_intermedio
+            es_titulo_str = 'Sí' if es_titulo else 'No'
             row = [
                 obj.codigo or "",
                 getattr(obj.partida, 'codigo', "") or "",
@@ -90,17 +100,27 @@ class StyledExportAdmin(ImportExportModelAdmin, BaseLoggedAdmin):
                 getattr(obj, 'ace_22_chile', '') or "",
                 getattr(obj, 'ace_22_prot', '') or "",
                 getattr(obj, 'ace_66_mexico', '') or "",
-                1 if obj.es_titulo_intermedio else 0
+                es_titulo_str
             ]
             sheet.append(row)
-            if obj.es_titulo_intermedio:
-                for cell in sheet[sheet.max_row]:
-                    cell.font = Font(bold=True)
+            # Alternar colores de fondo en filas
+            fill = alt_fill_1 if idx % 2 == 0 else alt_fill_2
+            if es_titulo:
+                fill = titulo_fill
+            for cell in sheet[idx]:
+                cell.fill = fill
+            if es_titulo:
+                for cell in sheet[idx]:
+                    cell.font = Font(bold=True, color="0D47A1")
 
+        # Ajustar ancho de columnas
         for i, column_cells in enumerate(sheet.columns):
             max_length = max(len(str(cell.value or "")) for cell in column_cells)
             column_letter = get_column_letter(i + 1)
             sheet.column_dimensions[column_letter].width = min(max_length + 2, 60)
+
+        # Agregar filtros automáticos a todas las columnas
+        sheet.auto_filter.ref = sheet.dimensions
 
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -198,7 +218,10 @@ class SubpartidaOrdenadaResource(resources.ModelResource):
             row_normalized[key_upper] = value
         
         # Si es un título intermedio sin código, generar uno automáticamente
-        if row_normalized.get('ES TÍTULO') in ['1', 1, 'true', 'True', True] and not row_normalized.get('CÓDIGO'):
+        es_titulo_valores = ['1', 1, 'true', 'True', True, 'Sí', 'SI', 'si', 'SÍ']
+        es_titulo = row_normalized.get('ES TÍTULO')
+        codigo_actual = row_normalized.get('CÓDIGO')
+        if es_titulo in es_titulo_valores and (not codigo_actual or str(codigo_actual).strip() == ''):
             row_normalized['CÓDIGO'] = f"_H_{uuid.uuid4().hex[:10].upper()}"
         
         # Asegurar que siempre hay un CÓDIGO PARTIDA válido (después de limpiar espacios)
@@ -212,6 +235,7 @@ class SubpartidaOrdenadaResource(resources.ModelResource):
         super().before_import_row(row, **kwargs)
 
     def after_import(self, dataset, result, **kwargs):
+        from aranceles.models import RegistroCambio, Subpartida
         dry_run = kwargs.get('dry_run', False)
         if dry_run:
             return
@@ -219,9 +243,58 @@ class SubpartidaOrdenadaResource(resources.ModelResource):
         nuevas = sum(1 for row in result.rows if row.import_type == row.IMPORT_TYPE_NEW)
         modificadas = sum(1 for row in result.rows if row.import_type == row.IMPORT_TYPE_UPDATE)
         omitidas = sum(1 for row in result.rows if row.import_type == row.IMPORT_TYPE_SKIP)
-        codigos_despues = set(Subpartida.objects.values_list('codigo', flat=True))
+
+        codigos_importados = set()
+        for row in dataset.dict:
+            codigo = row.get('CÓDIGO')
+            if codigo:
+                codigos_importados.add(str(codigo).strip())
+
         codigos_antes = getattr(self, 'codigos_antes', set())
-        eliminadas = len(codigos_antes - codigos_despues)
+        codigos_a_eliminar = codigos_antes - codigos_importados
+        eliminadas = 0
+        if codigos_a_eliminar:
+            eliminadas = len(codigos_a_eliminar)
+            subpartidas_eliminadas = list(Subpartida.objects.filter(codigo__in=codigos_a_eliminar))
+            Subpartida.objects.filter(codigo__in=codigos_a_eliminar).delete()
+            # Registrar eliminaciones
+            for sp in subpartidas_eliminadas:
+                RegistroCambio.objects.create(
+                    tipo_cambio='eliminar',
+                    modelo='Subpartida',
+                    objeto_id=sp.id,
+                    usuario='Sistema',
+                    descripcion=f"Eliminado por importación: {sp.codigo}",
+                    cambios_detalles={}
+                )
+
+        # Registrar nuevas y modificadas
+        for row, import_row in zip(dataset.dict, result.rows):
+            codigo = row.get('CÓDIGO')
+            if not codigo:
+                continue
+            try:
+                sp = Subpartida.objects.get(codigo=str(codigo).strip())
+            except Subpartida.DoesNotExist:
+                continue
+            if import_row.import_type == import_row.IMPORT_TYPE_NEW:
+                RegistroCambio.objects.create(
+                    tipo_cambio='crear',
+                    modelo='Subpartida',
+                    objeto_id=sp.id,
+                    usuario='Sistema',
+                    descripcion=f"Creado por importación: {sp.codigo}",
+                    cambios_detalles={}
+                )
+            elif import_row.import_type == import_row.IMPORT_TYPE_UPDATE:
+                RegistroCambio.objects.create(
+                    tipo_cambio='actualizar',
+                    modelo='Subpartida',
+                    objeto_id=sp.id,
+                    usuario='Sistema',
+                    descripcion=f"Actualizado por importación: {sp.codigo}",
+                    cambios_detalles={}
+                )
 
         LogActualizacion.objects.create(
             fecha_inicio=datetime.now(),
@@ -231,6 +304,10 @@ class SubpartidaOrdenadaResource(resources.ModelResource):
             filas_eliminadas=eliminadas,
             detalles=f"Importación finalizada: {nuevas} nuevas, {modificadas} modificadas, {eliminadas} eliminadas, {omitidas} omitidas."
         )
+
+        # Mostrar mensaje de confirmación con el número correcto de eliminados
+        from import_export.results import RowResult
+        result.deleted_rows = eliminadas  # Forzar el valor correcto en el resultado
 
         super().after_import(dataset, result, **kwargs)
 

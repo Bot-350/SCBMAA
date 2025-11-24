@@ -42,9 +42,15 @@ def tabla_aranceles(request):
                     # Asignar dinámicamente como atributo (no es campo de BD)
                     subpartida.fecha_ultima_modificacion = ultimo_cambio.fecha if ultimo_cambio else None
     
+    # Obtener la fecha de la última importación desde LogActualizacion
+    from .models import LogActualizacion
+    ultimo_log = LogActualizacion.objects.order_by('-fecha_inicio').first()
+    fecha_ultima_importacion = ultimo_log.fecha_inicio if ultimo_log else None
+
     context = {
         'secciones': secciones,
-        'fecha_hace_30_dias': fecha_hace_30_dias
+        'fecha_hace_30_dias': fecha_hace_30_dias,
+        'fecha_ultima_importacion': fecha_ultima_importacion
     }
     return render(request, 'arancel/tabla_aranceles.html', context)
 
