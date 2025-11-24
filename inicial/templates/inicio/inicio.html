@@ -595,7 +595,7 @@
         </div>
 
         <div class="buttons-container">
-            <button class="main-button button-arancel" onclick="goToArancel()" aria-label="Ir a Arancel">
+            <button class="main-button button-arancel" id="arancel-btn" aria-label="Ir a Arancel">
                 <div style="display:flex; align-items:center; gap:18px; width:100%; justify-content:center;">
                     <i style="font-size:34px;">📊</i>
                     <div style="text-align:left;">
@@ -610,27 +610,31 @@
             <!-- Tarjetas de videotutorial (se pueden personalizar en el array JS) -->
             <div class="tutorial-card" data-index="0">
                 <div class="tutorial-thumb">Tutorial 1</div>
-                <div class="tutorial-title">Cómo buscar un arancel</div>
-                <div class="tutorial-desc">Búsqueda por código y por descripción, filtrado y uso de sugerencias.</div>
+                <div class="tutorial-title">¿Cómo usar el buscador?</div>
+                <div class="tutorial-desc">Búsqueda por código y por descripción,uso de sugerencias.</div>
             </div>
 
             <div class="tutorial-card" data-index="1">
                 <div class="tutorial-thumb">Tutorial 2</div>
-                <div class="tutorial-title">Gestión de cuentas</div>
-                <div class="tutorial-desc">Crear usuarios, cambiar contraseña y permisos básicos.</div>
+                <div class="tutorial-title">¿Cómo usar las búsquedas recientes?</div>
+                <div class="tutorial-desc">Utilizar las búsquedas recientes</div>
             </div>
 
             <div class="tutorial-card" data-index="2">
                 <div class="tutorial-thumb">Tutorial 3</div>
-                <div class="tutorial-title">Historial y favoritos</div>
-                <div class="tutorial-desc">Guardar búsquedas, revisar historial y sincronización.</div>
+                <div class="tutorial-title">¿Para que sirve ese símbolo de ! y cómo ver cuál es la última actualización?</div>
+                <div class="tutorial-desc">Ver fecha de cambios realizados y ultima actualización</div>
             </div>
         </div>
 
         <!-- Modal para reproducir video -->
         <div class="video-modal" id="video-modal" aria-hidden="true">
             <div class="box">
-                <iframe id="video-iframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="Video tutorial"></iframe>
+                <iframe id="video-iframe" width="100%" height="620" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                <div id="video-fallback" style="display:none;padding:14px;background:rgba(0,0,0,0.6);color:white;text-align:center;">
+                    <div style="margin-bottom:8px;">Si el reproductor integrado no carga, puedes abrir el vídeo directamente en YouTube:</div>
+                    <a id="open-on-youtube" href="#" target="_blank" style="background:#ff0000;border:none;color:white;padding:8px 12px;border-radius:6px;cursor:pointer;display:inline-block;text-decoration:none;">Abrir en YouTube</a>
+                </div>
             </div>
         </div>
     </div>
@@ -646,58 +650,57 @@
     {% endif %}
 
     <script>
-        // Funcionalidad del menú desplegable del usuario
+        // === Variables y elementos usados globalmente ===
         const userIcon = document.getElementById('user-icon');
         const userDropdown = document.getElementById('user-dropdown');
         const dropdownOverlay = document.getElementById('dropdown-overlay');
         const logoutBtn = document.getElementById('logout-btn');
         const configBtn = document.getElementById('config-btn');
-        
-        // Mostrar/ocultar menú desplegable
-        userIcon.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleDropdown();
-        });
-        
-        // Cerrar menú al hacer clic en el overlay
-        dropdownOverlay.addEventListener('click', function() {
-            closeDropdown();
-        });
-        
-        // Función para alternar el menú desplegable
-        function toggleDropdown() {
-            if (userDropdown.classList.contains('show')) {
-                closeDropdown();
-            } else {
-                openDropdown();
-            }
-        }
-        
-        // Función para abrir el menú desplegable
+
+        // Funciones de dropdown (usuario)
         function openDropdown() {
             userDropdown.classList.add('show');
             dropdownOverlay.classList.add('show');
         }
-        
-        // Función para cerrar el menú desplegable
         function closeDropdown() {
             userDropdown.classList.remove('show');
             dropdownOverlay.classList.remove('show');
         }
-        
-        // Función para ir a la página de perfil/configuración
-        function goToProfile() {
-            window.location.href = "/perfil";
+        function toggleDropdown() {
+            if (userDropdown.classList.contains('show')) closeDropdown(); else openDropdown();
         }
-        
-        // Manejar el clic en configuración
+
+        userIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleDropdown();
+        });
+
+        dropdownOverlay.addEventListener('click', function() {
+            closeDropdown();
+        });
+
+        // Configuración -> perfil
         configBtn.addEventListener('click', function(e) {
             e.preventDefault();
             closeDropdown();
             goToProfile();
         });
-        
-        // Función para obtener cookies (útil para CSRF token)
+
+        function goToProfile() {
+            window.location.href = "/perfil";
+        }
+
+        // Logout (simple, tu implementación original usaba redirección)
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                // si deseas usar POST con CSRF, sustituye por submit de formulario
+                window.location.href = '/logout/';
+            }
+            closeDropdown();
+        });
+
+        // Helpers de cookies (dejé tu lógica original)
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -712,8 +715,7 @@
             }
             return cookieValue;
         }
-        
-        // Función para limpiar datos de sesión del navegador
+
         function clearBrowserSession() {
             try {
                 const cookies = document.cookie.split(";");
@@ -746,104 +748,161 @@
                 console.warn('No se pudieron limpiar todos los datos de sesión:', error);
             }
         }
-        
-        // Función para realizar logout (redirige directamente)
-        function performLogout() {
-            window.location.href = '/logout/';
+
+        // Navegación
+        // Loader visual para redirección rápida
+        function showLoaderAndRedirect(url) {
+            const btn = document.getElementById('arancel-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span style="width:100%;display:flex;align-items:center;justify-content:center;"><span class="spinner" style="margin-right:12px;width:24px;height:24px;border:4px solid #3498db;border-top:4px solid #fff;border-radius:50%;display:inline-block;animation:spin 1s linear infinite;"></span> Cargando…</span>';
+            }
+            window.location.href = url;
         }
 
-        // Manejar el logout
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-                performLogout();
-            }
-            closeDropdown();
-        });
-        
-        // Cerrar menú desplegable con Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeDropdown();
-            }
-        });
+        // Animación CSS para el spinner
+        const style = document.createElement('style');
+        style.innerHTML = '@keyframes spin { 0% { transform: rotate(0deg);} 100% {transform: rotate(360deg);} }';
+        document.head.appendChild(style);
 
-        // Funciones de navegacion
-        function goToArancel() {
-            window.location.href = "/aranceles/tabla/";
-        }
+        // Evento click optimizado para el botón
+        document.addEventListener('DOMContentLoaded', function() {
+            const arancelBtn = document.getElementById('arancel-btn');
+            if (arancelBtn) {
+                arancelBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showLoaderAndRedirect('/aranceles/tabla/');
+                });
+            }
+        });
 
         function showNotImplemented() {
             alert("Función no implementada");
         }
 
-        // Videotutoriales: configuración de ejemplo
+        // === VIDEOTUTORIALES: IDs de YouTube (usa el array TUTORIALS que ya tenías) ===
         const TUTORIALS = [
-            // Rellena con IDs de YouTube o URLs embebibles. Ejemplo: {id: 'dQw4w9WgXcQ', provider: 'youtube'}
-            { id: 'dQw4w9WgXcQ', provider: 'youtube' },
-            { id: '9bZkp7q19f0', provider: 'youtube' },
-            { id: '', provider: '' }
+            { id: 'dy3gQM9cpRM', provider: 'youtube' },
+            { id: 'NvlZKjmtJ7I', provider: 'youtube' },
+            { id: 'ucf6q8KGmx8', provider: 'youtube' }
         ];
 
-        // Abrir modal con video (soporta YouTube actualmente)
+        // Variables del modal/fallback
+        let _videoFallbackTimer = null;
+
         function openVideo(index) {
             const item = TUTORIALS[index];
             const modal = document.getElementById('video-modal');
             const iframe = document.getElementById('video-iframe');
+            const fallback = document.getElementById('video-fallback');
+            const openBtn = document.getElementById('open-on-youtube');
+
             if (!item || !modal || !iframe) return;
+
+            // Construir URL embed estándar de YouTube
             let src = '';
             if (item.provider === 'youtube' && item.id) {
                 src = `https://www.youtube.com/embed/${item.id}?rel=0&autoplay=1`;
             } else if (item.url) {
-                src = item.url; // Espera una URL embebible válida
+                src = item.url;
             }
+
+            // Preparar fallback y botón abrir en YouTube
+            if (fallback) fallback.style.display = 'none';
+            if (openBtn) {
+                openBtn.href = item.id ? `https://youtu.be/${item.id}` : (item.url || '#');
+                openBtn.onclick = function(e) {
+                    // Solo abrir si el href no es '#'
+                    if (openBtn.href !== '#') {
+                        window.open(openBtn.href, '_blank');
+                    }
+                    e.preventDefault();
+                };
+            }
+
+            // Forzar reload en algunos navegadores
+            iframe.src = '';
             iframe.src = src;
+
+            // Mostrar modal
             modal.classList.add('show');
             modal.setAttribute('aria-hidden', 'false');
+
+            // Listener carga para ocultar fallback si carga ok
+            try {
+                iframe.addEventListener('load', function onLoad() {
+                    try { if (fallback) fallback.style.display = 'none'; } catch(e){}
+                    try { clearTimeout(_videoFallbackTimer); } catch(e){}
+                    try { iframe.removeEventListener('load', onLoad); } catch(e){}
+                });
+            } catch(e) { /* noop */ }
+
+            // Mostrar fallback si no se reproduce (posible bloqueo de autoplay/embedding)
+            try { clearTimeout(_videoFallbackTimer); } catch(e){}
+            _videoFallbackTimer = setTimeout(() => {
+                if (fallback) fallback.style.display = 'block';
+            }, 2500);
         }
 
         function closeVideo() {
             const modal = document.getElementById('video-modal');
             const iframe = document.getElementById('video-iframe');
             if (!modal || !iframe) return;
+            // Detener vídeo
             iframe.src = '';
             modal.classList.remove('show');
             modal.setAttribute('aria-hidden', 'true');
         }
 
-        // Enlazar tarjetas a los videos
+        // === DOMContentLoaded: enlazar thumbnails, tarjetas y eventos del modal ===
         document.addEventListener('DOMContentLoaded', function() {
+            // Asignar thumbnails y evento click a las tarjetas
             const cards = document.querySelectorAll('.tutorial-card');
             cards.forEach(card => {
                 const idx = parseInt(card.getAttribute('data-index')) || 0;
+                // Asignar thumbnail desde YouTube si existe el ID en TUTORIALS
+                try {
+                    const thumb = card.querySelector('.tutorial-thumb');
+                    const info = (typeof TUTORIALS !== 'undefined' && TUTORIALS[idx]) ? TUTORIALS[idx] : null;
+                    if (thumb && info && info.id) {
+                        const imgUrl = `https://img.youtube.com/vi/${info.id}/hqdefault.jpg`;
+                        thumb.style.backgroundImage = `url('${imgUrl}')`;
+                        thumb.style.backgroundSize = 'cover';
+                        thumb.style.backgroundPosition = 'center';
+                        // Añadir un overlay de play grande (mantener texto accesible)
+                        thumb.innerHTML = '<span style="font-size:48px;color:rgba(255,255,255,0.95);text-shadow:0 4px 12px rgba(0,0,0,0.6)">▶</span>';
+                    }
+                } catch(err) {
+                    console.warn('No se pudo cargar thumbnail:', err);
+                }
+
+                // click: abrir video
                 card.addEventListener('click', () => openVideo(idx));
             });
-            // Cerrar modal al clicar fuera o con Escape
+
+            // Cerrar modal al clicar fuera
             const modal = document.getElementById('video-modal');
             if (modal) {
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) closeVideo();
                 });
             }
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeVideo(); });
-        });
 
-        // Efectos adicionales al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
+            // Cerrar modal con Escape
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeVideo(); });
+
+            // Efectos hover para botones (mantengo tu lógica)
             const buttons = document.querySelectorAll('.main-button');
-            
             buttons.forEach(button => {
                 button.addEventListener('mouseenter', function() {
                     this.style.transform = 'translateY(-8px) scale(1.02)';
                 });
-                
                 button.addEventListener('mouseleave', function() {
                     this.style.transform = 'translateY(0) scale(1)';
                 });
             });
         });
 
-        
     </script>
 </body>
 </html>
