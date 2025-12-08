@@ -11,4 +11,5 @@ urlpatterns = [
     path('logs/', views.view_search_logs, name='search_logs'),
     path('crear-usuario/', views.create_user, name='crear_usuario'),
     path('save-search/', views.save_search, name='save_search'),
+    path('recent-searches/', views.recent_searches, name='recent_searches'),
 ]

@@ -28,6 +28,22 @@
             padding: 0; 
             background-color: #f4f7f6; 
         }
+        /* (restored) No forzar overflow global para preservar comportamiento previo del encabezado sticky */
+        /* Tipografía y jerarquía visual mínima: títulos, capítulos y secciones */
+        h1, h2, h3 { font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; font-weight:600; color: var(--primary-darker); }
+        h1 { font-size: 28px; text-align: center; margin: 0 0 16px; }
+        /* Estilo destacado para el título principal de la página */
+        .page-title {
+            text-align: center;
+            font-size: 36px;
+            font-weight: 800;
+            color: #172554; /* tono oscuro para buen contraste */
+            text-shadow: 0 4px 18px rgba(23,37,84,0.12);
+            margin: 8px 0 18px;
+            letter-spacing: 0.6px;
+        }
+        .seccion h2 { font-size: 22px; padding-left: 12px; border-left: 5px solid #6f42c1; margin-top: 24px; }
+        .seccion h3 { font-size: 18px; padding-left: 12px; border-left: 3px solid #e74c3c; margin-top: 16px; }
         /* Widget actualización (esquina inferior derecha) */
         .update-widget {
             position: fixed;
@@ -276,8 +292,7 @@
             width: 100%;
             box-sizing: border-box;
         }
-
-        /* --- ESTILOS DE LA TABLA (MODIFICADOS) --- */
+        /* --- ESTILOS DE LA TABLA (RESTORED) --- */
         table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; background-color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #2c3e50; }
         th, td { border: 1px solid #bdc3c7; padding: 10px 8px; text-align: center; vertical-align: middle; }
         thead { position: sticky; top: 70px; z-index: 100; }
@@ -599,9 +614,10 @@
                 <div id="user-icon">👤</div>
                 <div id="user-dropdown">
                     <a href="{% url 'usuarios:perfil' %}" class="dropdown-item"><span class="icon">⚙️</span><span>Configuración</span></a>
+                    <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
                     {% if request.user.is_staff or request.user.is_superuser %}
                     <a href="{% url 'usuarios:crear_usuario' %}" class="dropdown-item"><span class="icon">➕</span><span>Añadir usuario</span></a>
-                    <a href="{% url 'usuarios:search_logs' %}" class="dropdown-item"><span class="icon">📊</span><span>Historial</span></a>
+                    <a href="/admin/" class="dropdown-item"><span class="icon">👨‍💼</span><span>Admin</span></a>
                     {% endif %}
                     <div class="dropdown-item logout-item" id="logout-btn"><span class="icon">🚪</span><span>Cerrar Sesión</span></div>
                 </div>
@@ -610,8 +626,8 @@
     </div>
 
     <div id="main-content" class="sidebar-open">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-            <h1 style="margin:0;">Tabla de Aranceles</h1>
+        <div style="display:flex;align-items:center;justify-content:center;">
+            <h1 class="page-title">Tabla de Aranceles</h1>
                 <!-- =====  exportar tabla  ===== 
             <button id="export-btn" class="btn btn-sm btn-outline-success" style="display:flex;align-items:center;gap:6px;"><span>💾</span> </button> -->
         </div>
@@ -857,7 +873,24 @@
                 const searches = loadRecent().filter(t => t !== term);
                 searches.unshift(term);
                 if(searches.length > MAX_STORE) searches.length = MAX_STORE;
-                localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(searches));
+                try { localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(searches)); } catch (e) { /* noop */ }
+            }
+
+            // Obtener recents desde el servidor (si el usuario está autenticado)
+            async function fetchRecentFromServer() {
+                if (!JS_USERNAME) return null; // usuario no autenticado → no llamar
+                try {
+                    const resp = await fetch('{% url "usuarios:recent_searches" %}');
+                    if (!resp.ok) return null;
+                    const payload = await resp.json();
+                    if (payload && payload.status === 'ok' && Array.isArray(payload.results)) {
+                        // Mapear a formato antiguo (simple string)
+                        return payload.results.map(r => r.term);
+                    }
+                } catch (e) {
+                    console.warn('fetchRecentFromServer failed', e);
+                }
+                return null;
             }
 
             // Funciones para manejar el historial de términos escritos por el usuario (Enter)
@@ -877,7 +910,7 @@
                 localStorage.setItem(SEARCH_STORAGE_KEY, JSON.stringify(searches));
             }
 
-            function showRecent() {
+            async function showRecent() {
                 const searches = loadRecent();
                 // Asegurar que el top-search esté expandido cuando mostramos recientes
                 try {
@@ -891,11 +924,18 @@
                     }
                 } catch(e) { /* ignore if DOM not ready */ }
 
+                // Preferir fuente server-side si existe
+                let serverSearches = null;
+                if (JS_USERNAME) {
+                    serverSearches = await fetchRecentFromServer();
+                }
+                const effectiveSearches = Array.isArray(serverSearches) && serverSearches.length > 0 ? serverSearches : searches;
+
                 suggestions.innerHTML = '<li style="padding: 8px 12px; font-size: 12px; color: #666; background: #f8f9fa; border-bottom: 1px solid #eee;">Búsquedas recientes</li>';
 
-                if (searches.length > 0) {
+                if (effectiveSearches.length > 0) {
                     loadTableData();
-                    searches.slice(0, MAX_SHOW).forEach(term => {
+                    effectiveSearches.slice(0, MAX_SHOW).forEach(term => {
                         const li = document.createElement('li');
                         li.style.position = 'relative';
 
@@ -903,14 +943,39 @@
                         const codigo = (codigoRaw || '').trim();
                         const desc = descParts.join(' - ') || '';
 
-                        // Intentar resolver el item real si está cargado
-                        const found = allItems.find(it => (codigo && it.codigo && (it.codigo === codigo || it.codigo.startsWith(codigo))) );
+                        // Intentar resolver el item real si está cargado.
+                        // Mejorar heurística para reconocer capítulos guardados como '01' o 'Capítulo 1'.
+                        let found = null;
+                        try {
+                            const codigoDigits = (codigo || '').replace(/\D/g, '');
+                            if (codigoDigits) {
+                                // Buscar coincidencia exacta por código sin puntos
+                                found = allItems.find(it => it.codigo && it.codigo.replace(/\./g, '') === codigoDigits);
+                                // Preferir capítulos si coinciden
+                                if (!found) {
+                                    found = allItems.find(it => it.codigo && it.codigo.replace(/\./g, '').startsWith(codigoDigits));
+                                }
+                            }
+                            // Si no se encontró y el texto contiene la palabra 'cap' intentar por nombre
+                            if (!found && /capit/i.test(codigo)) {
+                                found = allItems.find(it => it.type === 'Capítulo' && it.nombre && it.nombre.toLowerCase().includes(codigo.toLowerCase()));
+                            }
+                            // Último recurso: buscar por coincidencia parcial en nombre o descripción
+                            if (!found) {
+                                const lower = (codigo || '').toLowerCase();
+                                found = allItems.find(it => (it.nombre && it.nombre.toLowerCase().includes(lower)) || (it.desc && it.desc.toLowerCase().includes(lower)));
+                            }
+                        } catch(e) { /* ignore */ }
+
                         const item = found ? found : { codigo: codigo, desc: desc, type: null };
 
                         // Determinar tipo y color si no lo conocemos
                         let tagColor = '#28a745';
                         if (!item.type) {
-                            if (codigo && codigo.replace(/\./g, '').length <= 4) {
+                            const cleanCodeLen = (codigo || '').replace(/\./g, '').length;
+                            if (/capit/i.test(codigo) || cleanCodeLen === 2) {
+                                item.type = 'Capítulo';
+                            } else if (cleanCodeLen > 0 && cleanCodeLen <= 4) {
                                 item.type = 'Partida';
                             } else {
                                 item.type = 'Subpartida';
@@ -994,7 +1059,7 @@
                         deleteBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
                             const newSearches = loadRecent().filter(t => t !== term);
-                            localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(newSearches));
+                            try { localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(newSearches)); } catch(e) {}
                             showRecent();
                         });
 
@@ -1485,15 +1550,13 @@
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         const typed = searchInput.value.trim();
-                        if (typed) {
-                            saveSearchTerm(typed);
-                            console.log('Guardado en historial de búsquedas:', typed);
-                            logSearch(typed);
-                        }
-                        const firstResult = suggestions.querySelector('li:not(.no-results)');
-                        if (firstResult) {
+                        // Intentar hacer click en la primera sugerencia válida
+                        const firstResult = suggestions.querySelector('li:not(.no-results):not(.loading)');
+                        if (firstResult && typed) {
+                            // Hay sugerencia: hacer click (esto guardará automáticamente)
                             firstResult.click();
                         } else if (typed) {
+                            // No hay sugerencia: hacer búsqueda y luego registrar
                             performSearch(typed);
                         }
                     }

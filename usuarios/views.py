@@ -268,42 +268,66 @@ def save_search(request):
         return JsonResponse({'status': 'ok'})
     return JsonResponse({'status': 'error', 'message': 'Término vacío'})
 
-# Solo administradores pueden ver logs
-@user_passes_test(lambda u: u.is_staff or u.is_superuser)
 @login_required
 def view_search_logs(request):
-    """Vista para ver el historial de búsquedas"""
+    """Vista para ver el historial de búsquedas.
+    - Administradores ven todos los logs y pueden filtrar por usuario.
+    - Usuarios normales ven sólo sus propios logs y estadísticas.
+    """
     try:
-        # Obtener todos los usuarios que tienen logs
-        user_ids = SearchLog.objects.values_list('user', flat=True).distinct()
-        users_list = User.objects.filter(id__in=user_ids).order_by('username')
+        today = timezone.now().date()
 
-        selected_user_id = request.GET.get('user_id')
-        selected_user_logs = None
-        selected_user_instance = None
+        if request.user.is_staff or request.user.is_superuser:
+            # Administrador: mostrar todos los logs y permitir filtrado por usuario
+            user_ids = SearchLog.objects.values_list('user', flat=True).distinct()
+            users_list = User.objects.filter(id__in=user_ids).order_by('username')
 
-        if selected_user_id:
-            try:
-                selected_user_id = int(selected_user_id)
-                selected_user_instance = User.objects.get(id=selected_user_id)
-                selected_user_logs = SearchLog.objects.filter(user_id=selected_user_id).order_by('-timestamp')
-            except (ValueError, User.DoesNotExist):
-                selected_user_id = None
+            selected_user_id = request.GET.get('user_id')
+            selected_user_logs = None
+            selected_user_instance = None
 
-        logs = SearchLog.objects.select_related('user').order_by('-timestamp')
+            if selected_user_id:
+                try:
+                    selected_user_id = int(selected_user_id)
+                    selected_user_instance = User.objects.get(id=selected_user_id)
+                    selected_user_logs = SearchLog.objects.filter(user_id=selected_user_id).order_by('-timestamp')
+                except (ValueError, User.DoesNotExist):
+                    selected_user_id = None
 
-        context = {
-            'logs': logs,
-            'users_list': users_list,
-            'selected_user_logs': selected_user_logs,
-            'selected_user_instance': selected_user_instance,
-            'selected_user_id': selected_user_id,
-            'debug_info': {
-                'total_logs': logs.count(),
-                'request_user': request.user.username,
+            logs = SearchLog.objects.select_related('user').order_by('-timestamp')
+
+            context = {
+                'logs': logs,
+                'users_list': users_list,
+                'selected_user_logs': selected_user_logs,
+                'selected_user_instance': selected_user_instance,
+                'selected_user_id': selected_user_id,
+                'debug_info': {
+                    'total_logs': logs.count(),
+                    'request_user': request.user.username,
+                }
             }
-        }
-        return render(request, 'usuarios/search_logs.html', context)
+            return render(request, 'usuarios/search_logs.html', context)
+        else:
+            # Usuario normal: mostrar sólo sus búsquedas y estadísticas personales
+            user_logs = SearchLog.objects.filter(user=request.user).order_by('-timestamp')
+            most_searched_terms = SearchLog.objects.filter(user=request.user).values('term').annotate(count=Count('term')).order_by('-count')[:10]
+            daily_logs = SearchLog.objects.filter(user=request.user, timestamp__date=today).order_by('-timestamp')
+
+            context = {
+                'logs': None,
+                'users_list': [],
+                'selected_user_logs': user_logs,
+                'selected_user_instance': request.user,
+                'selected_user_id': request.user.id,
+                'most_searched_terms': most_searched_terms,
+                'daily_logs': daily_logs,
+                'debug_info': {
+                    'total_user_logs': user_logs.count(),
+                    'request_user': request.user.username,
+                }
+            }
+            return render(request, 'usuarios/search_logs.html', context)
     except Exception as e:
         import traceback
         context = {
@@ -318,6 +342,37 @@ def view_search_logs(request):
             }
         }
         return render(request, 'usuarios/search_logs.html', context)
+
+
+@login_required
+def recent_searches(request):
+    """Devuelve en JSON las búsquedas recientes del usuario autenticado.
+    - Si el usuario es staff y se pasa ?user_id=, devuelve los recents de ese usuario.
+    """
+    try:
+        user = request.user
+        # permitir que administradores pidan recents de otro usuario
+        target_user = user
+        user_id = request.GET.get('user_id')
+        if (user.is_staff or user.is_superuser) and user_id:
+            try:
+                user_id = int(user_id)
+                from django.contrib.auth.models import User as AuthUser
+                target_user = AuthUser.objects.get(id=user_id)
+            except Exception:
+                return JsonResponse({'status': 'error', 'message': 'Usuario no válido'}, status=400)
+
+        # Obtener últimos 25 registros
+        logs = SearchLog.objects.filter(user=target_user).order_by('-timestamp')[:25]
+        data = []
+        for l in logs:
+            data.append({
+                'term': l.term,
+                'timestamp': l.timestamp.isoformat(),
+            })
+        return JsonResponse({'status': 'ok', 'results': data})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 # Solo administradores pueden crear usuarios
