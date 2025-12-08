@@ -28,7 +28,7 @@ Sistema web desarrollado en Django para la consulta y administración básica de
 cd C:\Usuarios
 
 # Clonar el repositorio
-git clone -b https://github.com/Bot-350/SCBMAA.git
+git clone -b main https://github.com/Bot-350/SCBMAA.git
 
 # Entrar al proyecto
 cd SCBMAA
